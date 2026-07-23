@@ -1,0 +1,70 @@
+ import React from 'react';
+
+export default function Navbar({ activeTab, setActiveTab }) {
+  const navItems = [
+    { id: 'upload', label: 'Upload Resumes' },
+    { id: 'jobs', label: 'Job Postings' },
+    { id: 'match', label: 'AI Match & Candidate Pool' },
+  ];
+
+  return (
+    <nav style={{
+      background: 'rgba(18, 24, 36, 0.8)',
+      backdropFilter: 'blur(16px)',
+      borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+      padding: '1rem 2rem',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      position: 'sticky',
+      top: 0,
+      zIndex: 100
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{
+          width: '36px',
+          height: '36px',
+          borderRadius: '8px',
+          background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontWeight: 'bold',
+          color: '#fff',
+          fontSize: '1.2rem'
+        }}>
+          HR
+        </div>
+        <span style={{
+          fontFamily: 'Outfit, sans-serif',
+          fontWeight: 700,
+          fontSize: '1.25rem',
+          letterSpacing: '-0.02em'
+        }}>
+          Recruit<span style={{ color: '#6366f1' }}>AI</span>
+        </span>
+      </div>
+
+      <div style={{ display: 'flex', gap: '0.5rem' }}>
+        {navItems.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => setActiveTab(item.id)}
+            style={{
+              padding: '0.5rem 1rem',
+              borderRadius: '8px',
+              background: activeTab === item.id ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
+              color: activeTab === item.id ? '#818cf8' : '#9ca3af',
+              border: activeTab === item.id ? '1px solid rgba(99, 102, 241, 0.3)' : '1px solid transparent',
+              fontWeight: 500,
+              fontSize: '0.9rem',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+    </nav>
+  );
+}
