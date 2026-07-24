@@ -1,6 +1,6 @@
  import React from 'react';
 
-export default function Navbar({ activeTab, setActiveTab, user, onLogout }) {
+export default function Navbar({ activeTab, setActiveTab, user, onLogout, onProfile, isProfile }) {
   const navItems = [
     { id: 'upload', label: 'Upload Resumes' },
     { id: 'jobs', label: 'Job Postings' },
@@ -64,6 +64,12 @@ export default function Navbar({ activeTab, setActiveTab, user, onLogout }) {
             {item.label}
           </button>
         ))}
+        <button
+          onClick={onProfile}
+          style={{ padding: '0.5rem 1rem', borderRadius: '8px', background: isProfile ? 'rgba(99, 102, 241, 0.15)' : 'transparent', color: isProfile ? '#818cf8' : '#9ca3af', border: isProfile ? '1px solid rgba(99, 102, 241, 0.3)' : '1px solid transparent', fontWeight: 500, fontSize: '0.9rem' }}
+        >
+          Profile
+        </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: '0.75rem' }}>
           {user?.picture && (
             <img src={user.picture} alt="" style={{ width: '32px', height: '32px', borderRadius: '50%' }} />

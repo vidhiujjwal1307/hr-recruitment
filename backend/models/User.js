@@ -3,8 +3,8 @@ const mongoose = require('mongoose');
 const userSchema = new mongoose.Schema({
   googleId: {
     type: String,
-    required: true,
     unique: true,
+    sparse: true,
   },
   name: {
     type: String,
@@ -18,6 +18,15 @@ const userSchema = new mongoose.Schema({
   },
   picture: {
     type: String,
+  },
+  password: {
+    type: String,
+    select: false,
+  },
+  authProvider: {
+    type: String,
+    enum: ['google', 'local'],
+    required: true,
   },
   createdAt: {
     type: Date,
