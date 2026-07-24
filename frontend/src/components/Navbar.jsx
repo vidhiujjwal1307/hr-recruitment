@@ -1,6 +1,6 @@
  import React from 'react';
 
-export default function Navbar({ activeTab, setActiveTab }) {
+export default function Navbar({ activeTab, setActiveTab, user, onLogout }) {
   const navItems = [
     { id: 'upload', label: 'Upload Resumes' },
     { id: 'jobs', label: 'Job Postings' },
@@ -45,7 +45,7 @@ export default function Navbar({ activeTab, setActiveTab }) {
         </span>
       </div>
 
-      <div style={{ display: 'flex', gap: '0.5rem' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
         {navItems.map((item) => (
           <button
             key={item.id}
@@ -64,6 +64,18 @@ export default function Navbar({ activeTab, setActiveTab }) {
             {item.label}
           </button>
         ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: '0.75rem' }}>
+          {user?.picture && (
+            <img src={user.picture} alt="" style={{ width: '32px', height: '32px', borderRadius: '50%' }} />
+          )}
+          <span style={{ color: '#d1d5db', fontSize: '0.875rem' }}>{user?.name || user?.email}</span>
+          <button
+            onClick={onLogout}
+            style={{ padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.12)', background: 'transparent', color: '#d1d5db' }}
+          >
+            Logout
+          </button>
+        </div>
       </div>
     </nav>
   );

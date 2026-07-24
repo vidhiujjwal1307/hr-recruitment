@@ -22,18 +22,21 @@ const jobRoutes = require('./routes/jobs');
 const matchRoutes = require('./routes/match');
 const questionRoutes = require('./routes/questions');
 const scheduleRoutes = require('./routes/schedule');
+const authRoutes = require('./routes/auth');
+const { requireAuth } = require('./middleware/auth');
 
 // Mount Routes
-app.use('/api/resume', resumeRoutes);
-app.use('/api/jobs', jobRoutes);
-app.use('/api/match', matchRoutes);
-app.use('/api/questions', questionRoutes);
-app.use('/api/schedule', scheduleRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/resume', requireAuth, resumeRoutes);
+app.use('/api/jobs', requireAuth, jobRoutes);
+app.use('/api/match', requireAuth, matchRoutes);
+app.use('/api/questions', requireAuth, questionRoutes);
+app.use('/api/schedule', requireAuth, scheduleRoutes);
 
 // Direct alias mounts to ensure strict exact path compatibility
-app.use('/api/upload-resume', resumeRoutes);
-app.use('/api/generate-questions', questionRoutes);
-app.use('/api/schedule-interview', scheduleRoutes);
+app.use('/api/upload-resume', requireAuth, resumeRoutes);
+app.use('/api/generate-questions', requireAuth, questionRoutes);
+app.use('/api/schedule-interview', requireAuth, scheduleRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
