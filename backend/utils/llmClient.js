@@ -1,51 +1,51 @@
 const axios = require('axios');
 
+const GROQ_CHAT_COMPLETIONS_URL = 'https://api.groq.com/openai/v1/chat/completions';
+
 /**
- * Sends prompt to LLM (Google Gemini REST API or OpenAI-compatible endpoint)
- * and returns the generated text / JSON string.
+ * Sends a prompt to Groq's OpenAI-compatible chat completions API and returns
+ * the generated text / JSON string.
  */
 async function callLLM(prompt, systemInstruction = '') {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.LLM_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
 
-  if (!apiKey || apiKey === 'your_gemini_api_key_here' || apiKey === 'your_llm_api_key_here') {
-    console.warn('GEMINI_API_KEY / LLM_API_KEY not configured. Returning fallback structured data.');
+  if (!apiKey || apiKey === 'your_groq_api_key_here') {
+    console.warn('GROQ_API_KEY is not configured. Returning fallback structured data.');
     return null;
   }
 
   try {
-    // Attempt calling Gemini API v1beta
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`;
-
     const response = await axios.post(
-      url,
+      GROQ_CHAT_COMPLETIONS_URL,
       {
-        contents: [
-          {
-            parts: [
-              {
-                text: `${systemInstruction ? systemInstruction + '\n\n' : ''}${prompt}`,
-              },
-            ],
-          },
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          { role: 'system', content: systemInstruction },
+          { role: 'user', content: prompt },
         ],
-        generationConfig: {
-          responseMimeType: 'application/json',
-        },
+        temperature: 0.2,
       },
       {
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
       }
     );
 
-    const candidates = response.data?.candidates;
-    if (candidates && candidates.length > 0) {
-      const text = candidates[0].content?.parts[0]?.text;
-      return text;
+    const text = response.data?.choices?.[0]?.message?.content;
+    if (!text) {
+      throw new Error('No response content returned from Groq API.');
     }
 
-    throw new Error('No candidates returned from Gemini API.');
+    return text;
   } catch (error) {
-    console.error('LLM API Error:', error.response?.data || error.message);
+    const status = error.response?.status;
+    const responseBody = error.response?.data;
+    console.error('Groq LLM request failed:', {
+      status: status || 'no response',
+      responseBody: responseBody || error.message,
+    });
     throw error;
   }
 }
