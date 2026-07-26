@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Interview = require('../models/Interview');
+const Job = require('../models/Job');
 const { sendInterviewInvite } = require('../services/emailService');
 const mongoose = require('mongoose');
 
@@ -42,7 +43,19 @@ const handleSchedule = async (req, res) => {
     // Trigger email notification
     if (candidateEmail) {
       try {
-        await sendInterviewInvite(candidateEmail, savedInterview);
+        let jobTitle = 'the position';
+
+        if (mongoose.connection.readyState === 1 && mongoose.Types.ObjectId.isValid(jobId)) {
+          const job = await Job.findById(jobId);
+          if (job) {
+            jobTitle = job.title || job.jobTitle || jobTitle;
+          }
+        }
+
+        await sendInterviewInvite(candidateEmail, {
+          jobTitle: jobTitle,
+          dateTime: scheduledDate,
+        });
       } catch (emailErr) {
         console.warn('Email notification warning:', emailErr.message);
       }

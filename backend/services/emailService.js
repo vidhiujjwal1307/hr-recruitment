@@ -3,9 +3,8 @@ const nodemailer = require('nodemailer');
 async function sendInterviewInvite(toEmail, interviewDetails) {
   try {
     const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: process.env.SMTP_PORT || 587,
-      secure: false,
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
@@ -18,7 +17,6 @@ async function sendInterviewInvite(toEmail, interviewDetails) {
       from: `"RecruitAI" <${process.env.SMTP_USER}>`,
       to: toEmail,
       subject: `Interview Scheduled: ${interviewDetails.jobTitle || 'Your Application'}`,
-      text: `Hi,\n\nYou've been scheduled for an interview.\n\nDate/Time: ${interviewDetails.dateTime}\nJob: ${interviewDetails.jobTitle}\n\nBest,\nRecruitAI Team`,
       html: `
         <div style="font-family: sans-serif;">
           <h2>Interview Scheduled</h2>
