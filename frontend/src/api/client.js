@@ -56,4 +56,14 @@ export const scheduleInterview = async (scheduleData) => {
   return response.data;
 };
 
+export const createVideoInterviewRequest = async (data) => {
+  const response = await apiClient.post('/video-interview/request', data);
+  return response.data;
+};
+
+export const getCandidateVideoInterviews = async (candidateId) => {
+  const response = await apiClient.get(`/video-interview/candidate/${candidateId}`);
+  return response.data;
+};
+
 export default apiClient;

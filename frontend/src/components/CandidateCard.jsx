@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { createVideoInterviewRequest } from '../api/client';
+import VideoInterviewResults from './VideoInterviewResults';
 
 export default function CandidateCard({
   candidate,
@@ -13,6 +15,12 @@ export default function CandidateCard({
   const [showExplanation, setShowExplanation] = useState(false);
   const [questions, setQuestions] = useState(null);
   const [showQuestions, setShowQuestions] = useState(false);
+  const [videoQuestion, setVideoQuestion] = useState('');
+  const [videoLink, setVideoLink] = useState('');
+  const [videoNotice, setVideoNotice] = useState('');
+  const [videoError, setVideoError] = useState('');
+  const [creatingVideoRequest, setCreatingVideoRequest] = useState(false);
+  const [videoRefreshKey, setVideoRefreshKey] = useState(0);
 
   const handleAnalyzeClick = async () => {
     if (!selectedJobId) {
@@ -44,6 +52,23 @@ export default function CandidateCard({
   };
 
   const currentMatch = matchData?.[candidate._id || candidate.id];
+
+  const createVideoRequest = async () => {
+    if (!selectedJobId) return setVideoError('Select a job posting before creating a video interview.');
+    if (!videoQuestion.trim()) return setVideoError('Enter the interview question first.');
+    const candidateId = candidate._id?.toString?.() || candidate._id || candidate.id;
+    const jobId = selectedJobId?.toString?.() || selectedJobId;
+    console.log('Creating video interview request with IDs:', { candidateId, jobId });
+    setCreatingVideoRequest(true); setVideoError(''); setVideoNotice('');
+    try {
+      const result = await createVideoInterviewRequest({ candidateId, jobId, question: videoQuestion });
+      setVideoLink(`${window.location.origin}${result.data.sharePath}`);
+      setVideoNotice(result.data.emailSent ? `Invitation emailed to ${candidate.email}.` : 'Link created, but the email could not be sent. Copy the link manually or check SMTP settings.');
+      setVideoQuestion(''); setVideoRefreshKey((key) => key + 1);
+    } catch (error) {
+      setVideoError(error.response?.data?.message || 'Unable to create video interview request.');
+    } finally { setCreatingVideoRequest(false); }
+  };
 
   return (
     <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', position: 'relative' }}>
@@ -210,6 +235,16 @@ export default function CandidateCard({
           📅 Schedule Interview
         </button>
       </div>
+
+      <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+        <h4 style={{ marginBottom: '.5rem', color: '#a5b4fc' }}>Request video interview</h4>
+        <textarea value={videoQuestion} onChange={(event) => setVideoQuestion(event.target.value)} placeholder="Enter one interview question for this candidate" rows={3} style={{ width: '100%', padding: '.6rem', borderRadius: '8px', background: 'rgba(255,255,255,.04)', color: '#fff', border: '1px solid var(--border-color)', resize: 'vertical' }} />
+        {videoError && <p style={{ color: '#f87171', fontSize: '.8rem', marginTop: '.4rem' }}>{videoError}</p>}
+        {videoNotice && <p style={{ color: videoNotice.startsWith('Invitation') ? '#86efac' : '#fbbf24', fontSize: '.8rem', marginTop: '.4rem' }}>{videoNotice}</p>}
+        <button onClick={createVideoRequest} disabled={creatingVideoRequest} style={{ marginTop: '.5rem', padding: '.55rem .75rem', borderRadius: '8px', background: 'rgba(16,185,129,.12)', border: '1px solid rgba(16,185,129,.35)', color: '#6ee7b7' }}>{creatingVideoRequest ? 'Creating…' : 'Create shareable video link'}</button>
+        {videoLink && <div style={{ marginTop: '.75rem', fontSize: '.8rem', wordBreak: 'break-all', color: '#bfdbfe' }}>Candidate link: <a href={videoLink} target="_blank" rel="noreferrer">{videoLink}</a></div>}
+      </div>
+      <VideoInterviewResults candidateId={candidate._id || candidate.id} refreshKey={videoRefreshKey} />
     </div>
   );
 }

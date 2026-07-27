@@ -5,6 +5,7 @@ import JobPostingPage from './pages/JobPostingPage';
 import MatchResultsPage from './pages/MatchResultsPage';
 import LoginPage from './pages/LoginPage';
 import ProfilePage from './pages/ProfilePage';
+import VideoInterviewPage from './pages/VideoInterviewPage';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('upload');
@@ -24,7 +25,9 @@ export default function App() {
   };
   const handleLogin = (loggedInUser) => { setUser(loggedInUser); setIsAuthenticated(true); navigate('/'); };
   const handleLogout = () => { localStorage.removeItem('authToken'); localStorage.removeItem('user'); setUser(null); setIsAuthenticated(false); navigate('/login'); };
+  const publicInterviewToken = route.startsWith('/video-interview/') ? route.split('/')[2] : '';
 
+  if (publicInterviewToken) return <VideoInterviewPage token={publicInterviewToken} />;
   if (!isAuthenticated) return <LoginPage onLogin={handleLogin} mode={route === '/signup' ? 'signup' : 'login'} onNavigate={navigate} />;
 
   return <div style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>

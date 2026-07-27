@@ -23,10 +23,12 @@ const matchRoutes = require('./routes/match');
 const questionRoutes = require('./routes/questions');
 const scheduleRoutes = require('./routes/schedule');
 const authRoutes = require('./routes/auth');
+const videoInterviewRoutes = require('./routes/videoInterview');
 const { requireAuth } = require('./middleware/auth');
 
 // Mount Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/video-interview', videoInterviewRoutes);
 app.use('/api/resume', requireAuth, resumeRoutes);
 app.use('/api/jobs', requireAuth, jobRoutes);
 app.use('/api/match', requireAuth, matchRoutes);
