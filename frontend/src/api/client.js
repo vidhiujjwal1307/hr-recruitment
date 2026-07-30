@@ -4,7 +4,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
 const apiClient = axios.create({
   baseURL: API_BASE,
-  timeout: 30000,
+  timeout: 45000,
 });
 
 apiClient.interceptors.request.use((config) => {
@@ -26,13 +26,47 @@ export const uploadResume = async (formData) => {
   return response.data;
 };
 
+export const uploadBulkResumes = async (formData) => {
+  const response = await apiClient.post('/resume/upload-bulk', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
+};
+
 export const getCandidates = async () => {
   const response = await apiClient.get('/resume/candidates');
   return response.data;
 };
 
+export const updateCandidateStatus = async (candidateId, status) => {
+  const response = await apiClient.patch(`/resume/candidates/${candidateId}/status`, { status });
+  return response.data;
+};
+
+export const askCandidateQA = async (candidateId, question) => {
+  const response = await apiClient.post('/resume/qa', { candidateId, question });
+  return response.data;
+};
+
+export const getAnalyticsData = async () => {
+  const response = await apiClient.get('/resume/analytics');
+  return response.data;
+};
+
+export const deleteCandidate = async (candidateId) => {
+  const response = await apiClient.delete(`/resume/candidates/${candidateId}`);
+  return response.data;
+};
+
 export const createJob = async (jobData) => {
   const response = await apiClient.post('/jobs', jobData);
+  return response.data;
+};
+
+export const deleteJob = async (jobId) => {
+  const response = await apiClient.delete(`/jobs/${jobId}`);
   return response.data;
 };
 

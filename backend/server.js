@@ -39,6 +39,8 @@ app.use('/api/schedule', requireAuth, scheduleRoutes);
 app.use('/api/upload-resume', requireAuth, resumeRoutes);
 app.use('/api/generate-questions', requireAuth, questionRoutes);
 app.use('/api/schedule-interview', requireAuth, scheduleRoutes);
+app.use('/api/analytics', requireAuth, resumeRoutes);
+app.use('/api/candidates', requireAuth, resumeRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

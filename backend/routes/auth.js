@@ -21,6 +21,35 @@ function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
 }
 
+router.post('/demo', async (req, res) => {
+  try {
+    let user;
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState === 1) {
+      user = await User.findOne({ email: 'recruiter.demo@example.com' });
+      if (!user) {
+        user = await User.create({
+          name: 'Demo Recruiter',
+          email: 'recruiter.demo@example.com',
+          authProvider: 'local',
+        });
+      }
+    } else {
+      user = {
+        _id: 'user_demo_123',
+        name: 'Demo Recruiter',
+        email: 'recruiter.demo@example.com',
+        authProvider: 'local',
+      };
+    }
+    const token = signToken(user);
+    return res.json({ token, user: { name: user.name, email: user.email } });
+  } catch (error) {
+    console.error('Demo login error:', error.message);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 router.post('/google', async (req, res) => {
   try {
     const idToken = req.body?.credential || req.body?.idToken;

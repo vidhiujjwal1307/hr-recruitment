@@ -29,6 +29,11 @@ const CandidateSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    status: {
+      type: String,
+      enum: ['Applied', 'Screened', 'Interview', 'Offered', 'Rejected'],
+      default: 'Applied',
+    },
   },
   {
     timestamps: true,

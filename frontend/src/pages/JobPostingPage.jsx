@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { createJob, getJobs } from '../api/client';
+import { createJob, getJobs, deleteJob } from '../api/client';
 
 export default function JobPostingPage() {
   const [jobs, setJobs] = useState([]);
@@ -12,6 +12,7 @@ export default function JobPostingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     fetchJobs();
@@ -26,12 +27,30 @@ export default function JobPostingPage() {
     }
   };
 
+  const handleDeleteJob = async (jobId, jobTitle) => {
+    if (!window.confirm(`Are you sure you want to delete job posting "${jobTitle}"?`)) {
+      return;
+    }
+
+    setDeletingId(jobId);
+    try {
+      const res = await deleteJob(jobId);
+      if (res.success) {
+        setJobs((prev) => prev.filter((j) => (j._id || j.id) !== jobId));
+      }
+    } catch (err) {
+      console.error('Failed to delete job:', err);
+      alert(err.response?.data?.message || 'Failed to delete job posting.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
 
-    // Validation
     if (!formData.title || !formData.title.trim()) {
       setError('Please enter a valid job title.');
       return;
@@ -72,14 +91,14 @@ export default function JobPostingPage() {
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">Job Postings</h1>
+        <h1 className="page-title">Job Postings Requisitions</h1>
         <p className="page-subtitle">Create and manage active open requisitions for AI candidate matching.</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '2rem' }}>
         <div className="card">
           <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem', fontWeight: 600 }}>Post New Job</h2>
-          
+
           {error && (
             <div style={{
               background: 'rgba(239, 68, 68, 0.15)',
@@ -88,7 +107,7 @@ export default function JobPostingPage() {
               padding: '0.75rem 1rem',
               borderRadius: '8px',
               fontSize: '0.9rem',
-              marginBottom: '1rem'
+              marginBottom: '1rem',
             }}>
               ⚠️ {error}
             </div>
@@ -102,7 +121,7 @@ export default function JobPostingPage() {
               padding: '0.75rem 1rem',
               borderRadius: '8px',
               fontSize: '0.9rem',
-              marginBottom: '1rem'
+              marginBottom: '1rem',
             }}>
               ✓ {success}
             </div>
@@ -125,7 +144,7 @@ export default function JobPostingPage() {
                   borderRadius: '8px',
                   background: 'rgba(0,0,0,0.3)',
                   border: '1px solid var(--border-color)',
-                  color: '#fff'
+                  color: '#fff',
                 }}
               />
             </div>
@@ -143,7 +162,7 @@ export default function JobPostingPage() {
                   borderRadius: '8px',
                   background: 'rgba(0,0,0,0.3)',
                   border: '1px solid var(--border-color)',
-                  color: '#fff'
+                  color: '#fff',
                 }}
               />
             </div>
@@ -163,7 +182,7 @@ export default function JobPostingPage() {
                   borderRadius: '8px',
                   background: 'rgba(0,0,0,0.3)',
                   border: '1px solid var(--border-color)',
-                  color: '#fff'
+                  color: '#fff',
                 }}
               />
             </div>
@@ -185,7 +204,7 @@ export default function JobPostingPage() {
                   background: 'rgba(0,0,0,0.3)',
                   border: '1px solid var(--border-color)',
                   color: '#fff',
-                  resize: 'vertical'
+                  resize: 'vertical',
                 }}
               />
             </div>
@@ -197,31 +216,54 @@ export default function JobPostingPage() {
         </div>
 
         <div>
-          <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem', fontWeight: 600 }}>Active Postings</h2>
+          <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem', fontWeight: 600 }}>Active Requisitions ({jobs.length})</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {jobs.length === 0 ? (
               <div className="card" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
                 No active job postings found. Post a job to start matching candidates!
               </div>
             ) : (
-              jobs.map((job) => (
-                <div key={job._id || job.id} className="card">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>{job.title}</h3>
-                    <span style={{ fontSize: '0.8rem', color: '#818cf8', background: 'rgba(99, 102, 241, 0.15)', padding: '0.2rem 0.6rem', borderRadius: '12px', border: '1px solid rgba(99, 102, 241, 0.3)' }}>
-                      {job.location}
-                    </span>
+              jobs.map((job) => {
+                const jId = job._id || job.id;
+                return (
+                  <div key={jId} className="card" style={{ opacity: deletingId === jId ? 0.5 : 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#fff', margin: 0 }}>{job.title}</h3>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span style={{ fontSize: '0.8rem', color: '#818cf8', background: 'rgba(99, 102, 241, 0.15)', padding: '0.2rem 0.6rem', borderRadius: '12px', border: '1px solid rgba(99, 102, 241, 0.3)' }}>
+                          {job.location}
+                        </span>
+                        <button
+                          onClick={() => handleDeleteJob(jId, job.title)}
+                          disabled={deletingId === jId}
+                          title="Delete job posting"
+                          style={{
+                            background: 'rgba(239, 68, 68, 0.12)',
+                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                            color: '#f87171',
+                            borderRadius: '6px',
+                            padding: '0.25rem 0.5rem',
+                            fontSize: '0.85rem',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </div>
+
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', margin: '0.5rem 0' }}>{job.description}</p>
+
+                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                      {job.requirements?.map((req, i) => (
+                        <span key={i} style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.06)', padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
+                          {req}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', margin: '0.5rem 0' }}>{job.description}</p>
-                  <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                    {job.requirements?.map((req, i) => (
-                      <span key={i} style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.06)', padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
-                        {req}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>

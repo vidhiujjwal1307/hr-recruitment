@@ -1,11 +1,19 @@
- import React from 'react';
+import React from 'react';
 
-export default function Navbar({ activeTab, setActiveTab, user, onLogout, onProfile, isProfile }) {
+export default function Navbar({ activeTab, setActiveTab, user, onLogout, onProfile, isProfile, onNavigate }) {
   const navItems = [
+    { id: 'analytics', label: '📊 Analytics' },
     { id: 'upload', label: 'Upload Resumes' },
     { id: 'jobs', label: 'Job Postings' },
-    { id: 'match', label: 'AI Match & Candidate Pool' },
+    { id: 'match', label: 'AI Match & Pipeline' },
   ];
+
+  const handleNavClick = (itemId) => {
+    setActiveTab(itemId);
+    if (onNavigate) {
+      onNavigate('/');
+    }
+  };
 
   return (
     <nav style={{
@@ -18,9 +26,12 @@ export default function Navbar({ activeTab, setActiveTab, user, onLogout, onProf
       alignItems: 'center',
       position: 'sticky',
       top: 0,
-      zIndex: 100
+      zIndex: 100,
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+      <div
+        onClick={() => handleNavClick('analytics')}
+        style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}
+      >
         <div style={{
           width: '36px',
           height: '36px',
@@ -31,7 +42,7 @@ export default function Navbar({ activeTab, setActiveTab, user, onLogout, onProf
           justifyContent: 'center',
           fontWeight: 'bold',
           color: '#fff',
-          fontSize: '1.2rem'
+          fontSize: '1.2rem',
         }}>
           HR
         </div>
@@ -39,7 +50,7 @@ export default function Navbar({ activeTab, setActiveTab, user, onLogout, onProf
           fontFamily: 'Outfit, sans-serif',
           fontWeight: 700,
           fontSize: '1.25rem',
-          letterSpacing: '-0.02em'
+          letterSpacing: '-0.02em',
         }}>
           Recruit<span style={{ color: '#6366f1' }}>AI</span>
         </span>
@@ -49,35 +60,54 @@ export default function Navbar({ activeTab, setActiveTab, user, onLogout, onProf
         {navItems.map((item) => (
           <button
             key={item.id}
-            onClick={() => setActiveTab(item.id)}
+            onClick={() => handleNavClick(item.id)}
             style={{
               padding: '0.5rem 1rem',
               borderRadius: '8px',
-              background: activeTab === item.id ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
-              color: activeTab === item.id ? '#818cf8' : '#9ca3af',
-              border: activeTab === item.id ? '1px solid rgba(99, 102, 241, 0.3)' : '1px solid transparent',
+              background: !isProfile && activeTab === item.id ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
+              color: !isProfile && activeTab === item.id ? '#818cf8' : '#9ca3af',
+              border: !isProfile && activeTab === item.id ? '1px solid rgba(99, 102, 241, 0.3)' : '1px solid transparent',
               fontWeight: 500,
               fontSize: '0.9rem',
-              transition: 'all 0.2s ease'
+              transition: 'all 0.2s ease',
+              cursor: 'pointer',
             }}
           >
             {item.label}
           </button>
         ))}
+
         <button
           onClick={onProfile}
-          style={{ padding: '0.5rem 1rem', borderRadius: '8px', background: isProfile ? 'rgba(99, 102, 241, 0.15)' : 'transparent', color: isProfile ? '#818cf8' : '#9ca3af', border: isProfile ? '1px solid rgba(99, 102, 241, 0.3)' : '1px solid transparent', fontWeight: 500, fontSize: '0.9rem' }}
+          style={{
+            padding: '0.5rem 1rem',
+            borderRadius: '8px',
+            background: isProfile ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
+            color: isProfile ? '#818cf8' : '#9ca3af',
+            border: isProfile ? '1px solid rgba(99, 102, 241, 0.3)' : '1px solid transparent',
+            fontWeight: 500,
+            fontSize: '0.9rem',
+            cursor: 'pointer',
+          }}
         >
           Profile
         </button>
+
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: '0.75rem' }}>
           {user?.picture && (
-            <img src={user.picture} alt="" style={{ width: '32px', height: '32px', borderRadius: '50%' }} />
+            <img src={user.picture} alt="" style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
           )}
           <span style={{ color: '#d1d5db', fontSize: '0.875rem' }}>{user?.name || user?.email}</span>
           <button
             onClick={onLogout}
-            style={{ padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.12)', background: 'transparent', color: '#d1d5db' }}
+            style={{
+              padding: '0.5rem 0.75rem',
+              borderRadius: '8px',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              background: 'transparent',
+              color: '#d1d5db',
+              cursor: 'pointer',
+            }}
           >
             Logout
           </button>

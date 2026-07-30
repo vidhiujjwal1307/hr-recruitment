@@ -29,7 +29,6 @@ router.post('/', async (req, res) => {
   try {
     const { title, description, requirements, location } = req.body;
 
-    // Validation
     if (!title || !title.trim()) {
       return res.status(400).json({ success: false, message: 'Job title is required.' });
     }
@@ -67,6 +66,35 @@ router.post('/', async (req, res) => {
   } catch (error) {
     console.error('Error creating job:', error);
     return res.status(500).json({ success: false, message: error.message || 'Server error creating job posting.' });
+  }
+});
+
+/**
+ * @route   DELETE /api/jobs/:id
+ * @desc    Delete a job posting
+ */
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    let deletedJob;
+
+    if (mongoose.connection.readyState === 1) {
+      deletedJob = await Job.findByIdAndDelete(id);
+    } else {
+      const index = store.jobs.findIndex((j) => String(j._id) === String(id));
+      if (index !== -1) {
+        deletedJob = store.jobs.splice(index, 1)[0];
+      }
+    }
+
+    if (!deletedJob) {
+      return res.status(404).json({ success: false, message: 'Job posting not found.' });
+    }
+
+    return res.json({ success: true, message: 'Job posting deleted successfully.', data: deletedJob });
+  } catch (error) {
+    console.error('Error deleting job posting:', error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 });
 

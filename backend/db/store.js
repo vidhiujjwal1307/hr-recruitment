@@ -13,6 +13,7 @@ const candidates = [
       { degree: 'B.S. Computer Science', institution: 'State University', year: '2021' }
     ],
     rawText: 'Alex Rivera, Full Stack Engineer with 3+ years experience in React and Node.js.',
+    status: 'Applied',
     createdAt: new Date()
   }
 ];
