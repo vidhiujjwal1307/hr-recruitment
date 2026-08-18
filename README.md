@@ -63,20 +63,21 @@ npm run dev
 **Backend (`backend/.env`):**
 ```env
 PORT=5001
-MONGO_URI=your_mongodb_atlas_uri
-GROQ_API_KEY=your_groq_api_key
-GOOGLE_CLIENT_ID=your_google_client_id
-JWT_SECRET=your_jwt_secret_key
+MONGO_URI=mongodb+srv://vidhlove9258_db_user:7rRz315lWitO54T1@cluster0.ekukgpe.mongodb.net
+GROQ_API_KEY=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
+LLM_API_KEY=your_llm_api_key_here
+GOOGLE_CLIENT_ID=757996309729-i5pjlrbk43b31g1m3mroc07l3c5t5rt9.apps.googleusercontent.com
+JWT_SECRET=any_random_long_string_like_this_12345
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-SMTP_USER=your_gmail_address
-SMTP_PASS=your_app_password
+SMTP_USER=vidhiproffesionaluse@gmail.com
+SMTP_PASS= mwvy oojt rcpr sikb
 ```
 
 **Frontend (`frontend/.env`):**
 ```env
 VITE_API_BASE_URL=https://hr-recruitment-backend-g3hi.onrender.com/api
-VITE_GOOGLE_CLIENT_ID=your_google_client_id
+VITE_GOOGLE_CLIENT_ID=757996309729-i5pjlrbk43b31g1m3mroc07l3c5t5rt9.apps.googleusercontent.com
 ```
 
 ---
@@ -105,6 +106,6 @@ VITE_GOOGLE_CLIENT_ID=your_google_client_id
 ## 📞 Contact & Author
 
 **Author:** Vidhi Ujjwal  
-**Email:** [vidhiujjwal1307@gmail.com](mailto:vidhiujjwal1307@gmail.com)  
+**Email:** [vidhiujjwal07@gmail.com](mailto:vidhiujjwal07@gmail.com)  
 **GitHub:** [vidhiujjwal1307](https://github.com/vidhiujjwal1307)  
-**LinkedIn:** [Vidhi Ujjwal](https://linkedin.com/in/vidhi-ujjwal)  
+**LinkedIn:** [vidhiujjwal77](https://linkedin.com/in/vidhiujjwal77)  
