@@ -16,7 +16,7 @@ export default function LoginPage({ onLogin, mode = 'login', onNavigate }) {
   const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '757996309729-i5pjlrbk43b31g1m3mroc07l3c5t5rt9.apps.googleusercontent.com';
   const isSignup = mode === 'signup';
 
   const saveSession = ({ token, user }, authProvider) => {
@@ -34,7 +34,7 @@ export default function LoginPage({ onLogin, mode = 'login', onNavigate }) {
       saveSession(response.data, 'demo');
     } catch (err) {
       console.error(err);
-      setError('Unable to login with demo account.');
+      setError(err.response?.data?.message || err.message || 'Unable to login with demo account.');
     } finally {
       setSubmitting(false);
     }
@@ -46,7 +46,8 @@ export default function LoginPage({ onLogin, mode = 'login', onNavigate }) {
       const response = await apiClient.post('/auth/google', { credential: credentialResponse.credential });
       saveSession(response.data, 'google');
     } catch (requestError) {
-      setError(requestError.response?.data?.message || 'Unable to sign in with Google. Please try again.');
+      console.error('Google login API error:', requestError);
+      setError(requestError.response?.data?.message || requestError.message || 'Unable to sign in with Google. Please try again.');
     }
   };
 
@@ -64,7 +65,8 @@ export default function LoginPage({ onLogin, mode = 'login', onNavigate }) {
       const response = await apiClient.post(`/auth/${isSignup ? 'signup' : 'login'}`, payload);
       saveSession(response.data, 'local');
     } catch (requestError) {
-      setError(requestError.response?.data?.message || 'Unable to sign in. Please try again.');
+      console.error('Auth submit API error:', requestError);
+      setError(requestError.response?.data?.message || requestError.message || 'Unable to sign in. Please try again.');
     } finally {
       setSubmitting(false);
     }

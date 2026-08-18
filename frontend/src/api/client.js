@@ -1,9 +1,8 @@
 import axios from 'axios';
 
 const getApiBaseUrl = () => {
-  const rawEnv = import.meta.env.VITE_API_BASE_URL;
-  if (!rawEnv) return '/api';
-  const cleanEnv = rawEnv.trim().replace(/\/+$/, '');
+  const rawEnv = import.meta.env.VITE_API_BASE_URL || 'https://hr-recruitment-backend-g3hi.onrender.com/api';
+  const cleanEnv = String(rawEnv).trim().replace(/\/+$/, '');
   return cleanEnv.endsWith('/api') ? cleanEnv : `${cleanEnv}/api`;
 };
 
