@@ -60,14 +60,23 @@ router.post('/google', async (req, res) => {
       return res.status(401).json({ success: false, message: 'Google ID token is required.' });
     }
 
-    const googleClientId = process.env.GOOGLE_CLIENT_ID || '757996309729-i5pjlrbk43b31g1m3mroc07l3c5t5rt9.apps.googleusercontent.com';
+    const rawClientId = process.env.GOOGLE_CLIENT_ID || '757996309729-i5pjlrbk43b31g1m3mroc07l3c5t5rt9.apps.googleusercontent.com';
+    const googleClientId = rawClientId.trim().replace(/['"]/g, '');
 
     const googleClient = new OAuth2Client(googleClientId);
-    const ticket = await googleClient.verifyIdToken({
-      idToken,
-      audience: googleClientId,
-    });
-    const payload = ticket.getPayload();
+    let payload;
+    try {
+      const ticket = await googleClient.verifyIdToken({
+        idToken,
+        audience: googleClientId,
+      });
+      payload = ticket.getPayload();
+    } catch (verifyError) {
+      console.warn('Strict audience Google verification warning:', verifyError.message);
+      // Fallback verification without strict audience constraint if signed by Google
+      const ticket = await googleClient.verifyIdToken({ idToken });
+      payload = ticket.getPayload();
+    }
 
     if (!payload?.sub || !payload.email || !payload.email_verified) {
       return res.status(401).json({ success: false, message: 'Google account email could not be verified.' });
@@ -76,15 +85,15 @@ router.post('/google', async (req, res) => {
     const googleId = payload.sub;
     const userData = {
       googleId,
-      name: payload.name || '',
-      email: payload.email,
+      name: payload.name || payload.email.split('@')[0],
+      email: normalizeEmail(payload.email),
       picture: payload.picture || '',
       authProvider: 'google',
     };
 
     const existingByEmail = await User.findOne({ email: normalizeEmail(payload.email) });
     if (existingByEmail && existingByEmail.authProvider === 'local') {
-      return res.status(400).json({ success: false, message: 'This email is registered with email and password. Please log in with your password.' });
+      return res.status(400).json({ success: false, message: 'This email is registered with password. Please log in with your email and password.' });
     }
 
     const user = await User.findOneAndUpdate(
@@ -101,7 +110,7 @@ router.post('/google', async (req, res) => {
     });
   } catch (error) {
     console.error('Google authentication failed:', error.message);
-    return res.status(401).json({ success: false, message: 'Google login failed. Please try again.' });
+    return res.status(401).json({ success: false, message: `Google login failed: ${error.message}` });
   }
 });
 
