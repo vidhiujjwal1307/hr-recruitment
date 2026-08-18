@@ -58,27 +58,6 @@ npm install
 npm run dev
 ```
 
-### Environment Variables
-
-**Backend (`backend/.env`):**
-```env
-PORT=5001
-MONGO_URI=mongodb+srv://vidhlove9258_db_user:7rRz315lWitO54T1@cluster0.ekukgpe.mongodb.net
-GROQ_API_KEY=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
-LLM_API_KEY=your_llm_api_key_here
-GOOGLE_CLIENT_ID=757996309729-i5pjlrbk43b31g1m3mroc07l3c5t5rt9.apps.googleusercontent.com
-JWT_SECRET=any_random_long_string_like_this_12345
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=vidhiproffesionaluse@gmail.com
-SMTP_PASS= mwvy oojt rcpr sikb
-```
-
-**Frontend (`frontend/.env`):**
-```env
-VITE_API_BASE_URL=https://hr-recruitment-backend-g3hi.onrender.com/api
-VITE_GOOGLE_CLIENT_ID=757996309729-i5pjlrbk43b31g1m3mroc07l3c5t5rt9.apps.googleusercontent.com
-```
 
 ---
 
