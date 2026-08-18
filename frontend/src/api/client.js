@@ -1,9 +1,14 @@
 import axios from 'axios';
 
 const getApiBaseUrl = () => {
-  const rawEnv = import.meta.env.VITE_API_BASE_URL || 'https://hr-recruitment-backend-g3hi.onrender.com/api';
-  const cleanEnv = String(rawEnv).trim().replace(/\/+$/, '');
-  return cleanEnv.endsWith('/api') ? cleanEnv : `${cleanEnv}/api`;
+  const rawEnv = import.meta.env.VITE_API_BASE_URL ? String(import.meta.env.VITE_API_BASE_URL).trim() : '';
+
+  if (rawEnv && rawEnv.startsWith('http') && !rawEnv.includes('vercel.app')) {
+    const cleanEnv = rawEnv.replace(/\/+$/, '');
+    return cleanEnv.endsWith('/api') ? cleanEnv : `${cleanEnv}/api`;
+  }
+
+  return 'https://hr-recruitment-backend-g3hi.onrender.com/api';
 };
 
 const API_BASE = getApiBaseUrl();
