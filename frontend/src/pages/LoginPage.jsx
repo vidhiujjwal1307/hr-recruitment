@@ -109,7 +109,7 @@ export default function LoginPage({ onLogin, mode = 'login', onNavigate }) {
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
             <GoogleLogin
               onSuccess={handleGoogleSuccess}
-              onError={() => setError('Google OAuth origin mismatch: Add http://localhost:3000 to Google Cloud Console Authorized JavaScript origins, or click Instant Demo Access above.')}
+              onError={() => setError(`Google OAuth origin error: Please ensure ${window.location.origin} is added under Authorized JavaScript origins in Google Cloud Console.`)}
             />
           </div>
         ) : (
