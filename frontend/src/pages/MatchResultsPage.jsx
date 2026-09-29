@@ -1,22 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { getCandidates, getJobs, matchCandidate, generateQuestions, deleteCandidate } from '../api/client';
+import { getCandidates, getJobs, matchCandidate, deleteCandidate } from '../api/client';
 import CandidateCard from '../components/CandidateCard';
-import ScheduleModal from './ScheduleModal';
 import CandidateQAModal from '../components/CandidateQAModal';
 
-export default function MatchResultsPage() {
+export default function MatchResultsPage({ initialSearch = '', initialStatus = 'ALL', mode = 'candidates' }) {
   const [candidates, setCandidates] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [selectedJobId, setSelectedJobId] = useState('');
   const [matchDataMap, setMatchDataMap] = useState({});
   const [loadingInitial, setLoadingInitial] = useState(true);
   const [loadingBatchMatch, setLoadingBatchMatch] = useState(false);
-  const [activeScheduleModal, setActiveScheduleModal] = useState(null);
   const [activeQAModalCandidate, setActiveQAModalCandidate] = useState(null);
 
   // Search & Filter state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
+  const [statusFilter, setStatusFilter] = useState(initialStatus);
   const [selectedSkillFilter, setSelectedSkillFilter] = useState('ALL');
   const [minMatchScore, setMinMatchScore] = useState(0);
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'pipeline'
@@ -24,6 +22,14 @@ export default function MatchResultsPage() {
   useEffect(() => {
     loadInitialData();
   }, []);
+
+  useEffect(() => {
+    setSearchQuery(initialSearch);
+  }, [initialSearch]);
+
+  useEffect(() => {
+    setStatusFilter(initialStatus);
+  }, [initialStatus]);
 
   const loadInitialData = async () => {
     setLoadingInitial(true);
@@ -87,13 +93,6 @@ export default function MatchResultsPage() {
         [cId]: res.data,
       }));
     }
-  };
-
-  const handleGenerateQuestions = async (candidate, jobId) => {
-    const cId = candidate._id || candidate.id;
-    const targetJobId = jobId || selectedJobId;
-    const res = await generateQuestions(cId, targetJobId);
-    return res.data?.questions || [];
   };
 
   const handleStatusUpdated = (candidateId, newStatus) => {
@@ -172,8 +171,8 @@ export default function MatchResultsPage() {
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">AI Candidate Matching & Pipeline Pool</h1>
-        <p className="page-subtitle">Rank candidate applications, filter by skills & status, and run RAG resume Q&A.</p>
+        <h1 className="page-title">{mode === 'interviews' ? 'Interviews' : mode === 'assessments' ? 'Assessments' : 'Candidates'}</h1>
+        <p className="page-subtitle">{mode === 'interviews' ? 'Candidates in the interview stage, with scheduling and video screening tools.' : mode === 'assessments' ? 'Run AI match analysis and create tailored interview questions.' : 'Manage and evaluate your talent pipeline.'}</p>
       </div>
 
       {/* Target Job Selector Card */}
@@ -381,10 +380,9 @@ export default function MatchResultsPage() {
                 key={candidate._id || candidate.id}
                 candidate={candidate}
                 selectedJobId={selectedJobId}
+                selectedJobRequirements={selectedJob?.requirements || []}
                 matchData={matchDataMap}
                 onAnalyzeMatch={handleAnalyzeMatch}
-                onGenerateQuestions={handleGenerateQuestions}
-                onOpenSchedule={(cand, qList) => setActiveScheduleModal({ candidate: cand, questions: qList })}
                 onOpenQA={(cand) => setActiveQAModalCandidate(cand)}
                 onStatusUpdated={handleStatusUpdated}
                 onCandidateDeleted={handleCandidateDeleted}
@@ -506,21 +504,6 @@ export default function MatchResultsPage() {
                             >
                               💬 Q&A
                             </button>
-                            <button
-                              onClick={() => setActiveScheduleModal({ candidate: cand, questions: [] })}
-                              style={{
-                                flex: 1,
-                                padding: '0.3rem',
-                                borderRadius: '4px',
-                                background: 'rgba(99, 102, 241, 0.15)',
-                                border: '1px solid rgba(99, 102, 241, 0.3)',
-                                color: '#818cf8',
-                                fontSize: '0.75rem',
-                                cursor: 'pointer',
-                              }}
-                            >
-                              📅 Schedule
-                            </button>
                           </div>
                         </div>
                       );
@@ -532,16 +515,6 @@ export default function MatchResultsPage() {
           </div>
         )}
       </div>
-
-      {/* Schedule Modal */}
-      {activeScheduleModal && (
-        <ScheduleModal
-          candidate={activeScheduleModal.candidate}
-          jobId={selectedJobId}
-          questions={activeScheduleModal.questions}
-          onClose={() => setActiveScheduleModal(null)}
-        />
-      )}
 
       {/* Candidate Q&A RAG Modal */}
       {activeQAModalCandidate && (

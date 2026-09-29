@@ -91,8 +91,8 @@ export default function JobPostingPage() {
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">Job Postings Requisitions</h1>
-        <p className="page-subtitle">Create and manage active open requisitions for AI candidate matching.</p>
+        <h1 className="page-title">Job postings</h1>
+        <p className="page-subtitle">Create and manage roles in your hiring pipeline.</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '2rem' }}>

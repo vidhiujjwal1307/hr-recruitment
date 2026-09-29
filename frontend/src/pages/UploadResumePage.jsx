@@ -95,8 +95,8 @@ export default function UploadResumePage({ onCandidateUploaded }) {
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">Candidate Resume Upload & Parsing</h1>
-        <p className="page-subtitle">Extract structured candidate data instantly using LLM-powered PDF parsing.</p>
+        <h1 className="page-title">Resume intake</h1>
+        <p className="page-subtitle">Upload resumes to parse candidate details and add them to your pipeline.</p>
       </div>
 
       {/* Mode Switcher */}

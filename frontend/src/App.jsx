@@ -10,6 +10,7 @@ import VideoInterviewPage from './pages/VideoInterviewPage';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('analytics');
+  const [candidateSearch, setCandidateSearch] = useState('');
   const [route, setRoute] = useState(() => window.location.pathname);
   const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(localStorage.getItem('authToken')));
   const [user, setUser] = useState(() => { try { return JSON.parse(localStorage.getItem('user')); } catch { return null; } });
@@ -32,20 +33,23 @@ export default function App() {
   if (!isAuthenticated) return <LoginPage onLogin={handleLogin} mode={route === '/signup' ? 'signup' : 'login'} onNavigate={navigate} />;
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>
-      <Navbar activeTab={activeTab} setActiveTab={setActiveTab} user={user} onLogout={handleLogout} onProfile={() => navigate('/profile')} isProfile={route === '/profile'} />
+    <div className="app-shell">
+      <Navbar activeTab={activeTab} setActiveTab={setActiveTab} user={user} onLogout={handleLogout} onProfile={() => navigate('/profile')} isProfile={route === '/profile'} onNavigate={navigate} onSearch={(query) => { setCandidateSearch(query); setActiveTab('match'); navigate('/'); }}>
       <main className="app-container">
         {route === '/profile' ? (
           <ProfilePage user={user} onLogout={handleLogout} />
         ) : (
           <>
-            {activeTab === 'analytics' && <AnalyticsPage />}
+            {activeTab === 'analytics' && <AnalyticsPage onNavigate={setActiveTab} />}
             {activeTab === 'upload' && <UploadResumePage />}
             {activeTab === 'jobs' && <JobPostingPage />}
-            {activeTab === 'match' && <MatchResultsPage />}
+            {activeTab === 'match' && <MatchResultsPage initialSearch={candidateSearch} />}
+            {activeTab === 'assessments' && <MatchResultsPage mode="assessments" />}
+            {activeTab === 'interviews' && <MatchResultsPage initialStatus="Interview" mode="interviews" />}
           </>
         )}
       </main>
+      </Navbar>
     </div>
   );
 }

@@ -27,7 +27,7 @@ export default function ProfilePage({ user, onLogout }) {
     <header className="page-header"><h1 className="page-title">Profile</h1><p className="page-subtitle">Your account details and sign-in settings.</p></header>
     <section className="card" style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
       {user?.picture ? <img src={user.picture} alt="Profile" style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover' }} /> : <div aria-label="Default profile avatar" style={{ width: 72, height: 72, borderRadius: '50%', display: 'grid', placeItems: 'center', background: 'var(--accent-gradient)', fontSize: '1.5rem', fontWeight: 700 }}>{(user?.name || user?.email || '?').charAt(0).toUpperCase()}</div>}
-      <div><h2 style={{ margin: 0 }}>{user?.name || 'RecruitAI user'}</h2><p style={{ color: 'var(--text-muted)' }}>{user?.email}</p><p style={{ color: '#a5b4fc', marginTop: '0.5rem' }}>Sign-in method: {isLocalUser ? 'Email' : 'Google'}</p></div>
+      <div><h2 style={{ margin: 0 }}>{user?.name || 'HireSight user'}</h2><p style={{ color: 'var(--text-muted)' }}>{user?.email}</p><p style={{ color: '#8abfff', marginTop: '0.5rem' }}>Sign-in method: {isLocalUser ? 'Email' : 'Google'}</p></div>
     </section>
     {isLocalUser && <section className="card" style={{ marginTop: '1.5rem' }}>
       <h2 style={{ marginTop: 0 }}>Change Password</h2>

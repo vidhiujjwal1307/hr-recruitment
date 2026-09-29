@@ -1,269 +1,94 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ArrowDownRight, ArrowUpRight, BriefcaseBusiness, CheckCircle2, Clock3, FileUser, RefreshCw, Video } from 'lucide-react';
 import { getAnalyticsData } from '../api/client';
 
-export default function AnalyticsPage() {
+const stages = [
+  { key: 'Applied', label: 'Applications', tone: 'blue' },
+  { key: 'Screened', label: 'Qualified', tone: 'cyan' },
+  { key: 'Interview', label: 'Interviewed', tone: 'violet' },
+  { key: 'Offered', label: 'Offers', tone: 'green' },
+  { key: 'Rejected', label: 'Rejected', tone: 'muted' },
+];
+
+function MetricCard({ label, value, note, icon: Icon, tone }) {
+  return <article className="metric-card"><div className="metric-card-top"><span>{label}</span><span className={`metric-icon ${tone}`}><Icon size={17} /></span></div><strong className="metric-value">{value}</strong><span className="metric-note">{note}</span></article>;
+}
+
+function PanelHeading({ title, detail }) {
+  return <div className="panel-heading"><div><h2>{title}</h2>{detail && <p>{detail}</p>}</div><span className="panel-menu" aria-hidden="true">···</span></div>;
+}
+
+export default function AnalyticsPage({ onNavigate }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  useEffect(() => {
-    fetchAnalytics();
-  }, []);
 
   const fetchAnalytics = async () => {
     setLoading(true);
     setError(null);
     try {
       const res = await getAnalyticsData();
-      if (res.success && res.data) {
-        setData(res.data);
-      } else {
-        setError('Failed to load analytics metrics.');
-      }
+      if (res.success && res.data) setData(res.data);
+      else setError('Analytics data could not be loaded.');
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.message || 'Error connecting to analytics service.');
+      setError(err.response?.data?.message || 'Could not connect to the analytics service.');
     } finally {
       setLoading(false);
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Applied': return '#3b82f6';
-      case 'Screened': return '#a855f7';
-      case 'Interview': return '#f59e0b';
-      case 'Offered': return '#10b981';
-      case 'Rejected': return '#ef4444';
-      default: return '#6b7280';
-    }
-  };
+  useEffect(() => { fetchAnalytics(); }, []);
 
-  if (loading) {
-    return (
-      <div>
-        <div className="page-header">
-          <h1 className="page-title">Recruitment Analytics Dashboard</h1>
-          <p className="page-subtitle">Real-time candidate pipeline stats, skill metrics, and requisition breakdown.</p>
-        </div>
-        <div className="card" style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
-          <div style={{ fontSize: '2rem', marginBottom: '1rem', animation: 'spin 1s linear infinite', display: 'inline-block' }}>⚡</div>
-          <p>Loading analytics data...</p>
-        </div>
-      </div>
-    );
-  }
+  const pipeline = data?.pipelineBreakdown || {};
+  const stagesWithCounts = useMemo(() => stages.map((stage) => ({ ...stage, count: pipeline[stage.key] || 0 })), [pipeline]);
+  const maxStage = Math.max(1, ...stagesWithCounts.map((stage) => stage.count));
+  const totalPipeline = Object.values(pipeline).reduce((sum, count) => sum + Number(count || 0), 0);
+  const topSkills = data?.topSkills || [];
+  const maxSkill = Math.max(1, ...topSkills.map((skill) => skill.count || 0));
 
-  if (error || !data) {
-    return (
-      <div>
-        <div className="page-header">
-          <h1 className="page-title">Recruitment Analytics Dashboard</h1>
-          <p className="page-subtitle">Real-time candidate pipeline stats, skill metrics, and requisition breakdown.</p>
-        </div>
-        <div className="card" style={{ textAlign: 'center', padding: '3rem', color: '#f87171' }}>
-          <p style={{ marginBottom: '1rem' }}>⚠️ {error || 'No analytics data available.'}</p>
-          <button onClick={fetchAnalytics} className="btn-primary">Retry Loading</button>
-        </div>
-      </div>
-    );
-  }
+  return <div className="dashboard-page">
+    <header className="page-header dashboard-header">
+      <div><div className="eyebrow">TALENT OPERATIONS <span /> LIVE OVERVIEW</div><h1 className="page-title">Overview</h1><p className="page-subtitle">Recruitment performance at a glance.</p></div>
+      <button className="refresh-button" onClick={fetchAnalytics} disabled={loading}><RefreshCw size={15} className={loading ? 'spin-icon' : ''} /> Refresh</button>
+    </header>
 
-  const { totalCandidates, totalJobs, totalVideoInterviews, pipelineBreakdown, topSkills, recentCandidates } = data;
-  const totalInPipeline = Object.values(pipelineBreakdown).reduce((a, b) => a + b, 0) || 1;
+    {error && <div className="dashboard-error" role="alert"><span>{error}</span><button onClick={fetchAnalytics}>Try again</button></div>}
 
-  const pipelineStages = [
-    { key: 'Applied', label: 'Applied', color: '#3b82f6', icon: '📥' },
-    { key: 'Screened', label: 'Screened', color: '#a855f7', icon: '🔍' },
-    { key: 'Interview', label: 'Interview Scheduled', color: '#f59e0b', icon: '🎙️' },
-    { key: 'Offered', label: 'Job Offered', color: '#10b981', icon: '🎉' },
-    { key: 'Rejected', label: 'Rejected', color: '#ef4444', icon: '🚫' },
-  ];
+    <section className="metric-grid" aria-label="Recruitment metrics">
+      <MetricCard label="TOTAL CANDIDATES" value={loading ? '—' : (data?.totalCandidates ?? 0).toLocaleString()} note="Across your talent pipeline" icon={FileUser} tone="blue" />
+      <MetricCard label="JOB POSTINGS" value={loading ? '—' : (data?.totalJobs ?? 0).toLocaleString()} note="Roles in your workspace" icon={BriefcaseBusiness} tone="cyan" />
+      <MetricCard label="INTERVIEWS" value={loading ? '—' : (pipeline.Interview || 0).toLocaleString()} note="Candidates in interview stage" icon={Clock3} tone="violet" />
+      <MetricCard label="VIDEO INTERVIEWS" value={loading ? '—' : (data?.totalVideoInterviews ?? 0).toLocaleString()} note="Video interview requests" icon={Video} tone="green" />
+    </section>
 
-  return (
-    <div>
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <h1 className="page-title">📊 Recruitment Analytics & Insights</h1>
-          <p className="page-subtitle">Overall candidate funnel breakdown, top skills analysis, and active pipeline metrics.</p>
-        </div>
-        <button
-          onClick={fetchAnalytics}
-          style={{
-            background: 'rgba(99, 102, 241, 0.15)',
-            border: '1px solid rgba(99, 102, 241, 0.3)',
-            color: '#818cf8',
-            padding: '0.6rem 1.2rem',
-            borderRadius: '8px',
-            fontWeight: 600,
-            cursor: 'pointer',
-            fontSize: '0.9rem',
-          }}
-        >
-          🔄 Refresh Metrics
-        </button>
-      </div>
+    <section className="dashboard-grid dashboard-grid-primary">
+      <article className="dashboard-panel funnel-panel">
+        <PanelHeading title="Recruitment funnel" detail={`${totalPipeline.toLocaleString()} candidates across all stages`} />
+        {loading ? <div className="panel-loading">Loading pipeline…</div> : totalPipeline === 0 ? <div className="empty-panel"><span className="empty-icon"><FileUser size={18} /></span><strong>Your pipeline is ready</strong><p>Upload resumes to see candidates move through each recruitment stage.</p></div> : <div className="funnel-list">
+          {stagesWithCounts.map((stage) => <div className="funnel-row" key={stage.key}><div className="funnel-label"><span>{stage.label}</span><strong>{stage.count.toLocaleString()}</strong></div><div className="funnel-track"><span className={`funnel-fill ${stage.tone}`} style={{ width: `${Math.max(stage.count ? 5 : 0, (stage.count / maxStage) * 100)}%` }} /></div></div>)}
+        </div>}
+        <div className="funnel-footnote"><span><CheckCircle2 size={14} /> Pipeline stages update from candidate records</span><button onClick={() => onNavigate?.('match')}>View candidates <ArrowUpRight size={14} /></button></div>
+      </article>
 
-      {/* KPI Cards Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
-        <div className="card" style={{ background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(99, 102, 241, 0.02) 100%)', border: '1px solid rgba(99, 102, 241, 0.25)' }}>
-          <div style={{ fontSize: '0.825rem', color: '#818cf8', fontWeight: 600, textTransform: 'uppercase' }}>Total Candidates</div>
-          <div style={{ fontSize: '2.25rem', fontWeight: 700, color: '#fff', margin: '0.4rem 0' }}>{totalCandidates}</div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Across all job requisitions</div>
-        </div>
+      <article className="dashboard-panel skills-panel">
+        <PanelHeading title="Top candidate skills" detail="Most common skills from parsed resumes" />
+        {loading ? <div className="panel-loading">Loading skills…</div> : topSkills.length === 0 ? <div className="empty-panel"><span className="empty-icon"><FileUser size={18} /></span><strong>No skills yet</strong><p>Skills extracted from uploaded resumes will appear here.</p></div> : <div className="skills-list">{topSkills.slice(0, 6).map((skill, index) => <div className="skill-row" key={skill.skill}><span className="skill-rank">{String(index + 1).padStart(2, '0')}</span><span className="skill-name">{skill.skill}</span><span className="skill-bar-track"><span style={{ width: `${(skill.count / maxSkill) * 100}%` }} /></span><strong>{skill.count}</strong></div>)}</div>}
+        <div className="funnel-footnote"><span>Extracted from candidate resumes</span><span className="skill-legend"><i /> Skill mentions</span></div>
+      </article>
+    </section>
 
-        <div className="card" style={{ background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(168, 85, 247, 0.02) 100%)', border: '1px solid rgba(168, 85, 247, 0.25)' }}>
-          <div style={{ fontSize: '0.825rem', color: '#c084fc', fontWeight: 600, textTransform: 'uppercase' }}>Active Job Postings</div>
-          <div style={{ fontSize: '2.25rem', fontWeight: 700, color: '#fff', margin: '0.4rem 0' }}>{totalJobs}</div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Open hiring positions</div>
-        </div>
-
-        <div className="card" style={{ background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.02) 100%)', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
-          <div style={{ fontSize: '0.825rem', color: '#34d399', fontWeight: 600, textTransform: 'uppercase' }}>Video Interviews</div>
-          <div style={{ fontSize: '2.25rem', fontWeight: 700, color: '#fff', margin: '0.4rem 0' }}>{totalVideoInterviews}</div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Asynchronous video links created</div>
-        </div>
-
-        <div className="card" style={{ background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.02) 100%)', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
-          <div style={{ fontSize: '0.825rem', color: '#fbbf24', fontWeight: 600, textTransform: 'uppercase' }}>Offers / Interviews</div>
-          <div style={{ fontSize: '2.25rem', fontWeight: 700, color: '#fff', margin: '0.4rem 0' }}>
-            {(pipelineBreakdown.Interview || 0) + (pipelineBreakdown.Offered || 0)}
-          </div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>High intent candidates</div>
-        </div>
-      </div>
-
-      {/* Main Charts & Breakdown Section */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-        {/* Candidate Pipeline Stage Breakdown */}
-        <div className="card">
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#fff', marginBottom: '1.25rem' }}>
-            🔲 Candidate Pipeline Status Funnel
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-            {pipelineStages.map((stage) => {
-              const count = pipelineBreakdown[stage.key] || 0;
-              const pct = Math.round((count / totalInPipeline) * 100);
-
-              return (
-                <div key={stage.key}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '0.35rem' }}>
-                    <span style={{ fontWeight: 600, color: '#e5e7eb', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <span>{stage.icon}</span> {stage.label}
-                    </span>
-                    <span style={{ color: 'var(--text-muted)' }}>
-                      <strong>{count}</strong> ({pct}%)
-                    </span>
-                  </div>
-                  <div style={{
-                    height: '10px',
-                    width: '100%',
-                    background: 'rgba(255, 255, 255, 0.06)',
-                    borderRadius: '5px',
-                    overflow: 'hidden',
-                  }}>
-                    <div style={{
-                      height: '100%',
-                      width: `${pct}%`,
-                      background: stage.color,
-                      borderRadius: '5px',
-                      transition: 'width 0.6s ease',
-                    }} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Top Candidate Skills Breakdown */}
-        <div className="card">
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#fff', marginBottom: '1.25rem' }}>
-            💡 Top Resume Skills Extracted
-          </h3>
-          {topSkills.length === 0 ? (
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No skills extracted yet.</p>
-          ) : (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem' }}>
-              {topSkills.map((s, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    background: 'rgba(99, 102, 241, 0.1)',
-                    border: '1px solid rgba(99, 102, 241, 0.3)',
-                    borderRadius: '8px',
-                    padding: '0.4rem 0.8rem',
-                    fontSize: '0.875rem',
-                    color: '#e5e7eb',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                  }}
-                >
-                  <span style={{ fontWeight: 600, color: '#a5b4fc' }}>{s.skill}</span>
-                  <span style={{
-                    background: 'rgba(255, 255, 255, 0.12)',
-                    color: '#fff',
-                    borderRadius: '10px',
-                    padding: '0.1rem 0.45rem',
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                  }}>
-                    {s.count}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Recent Activity Table */}
-      <div className="card">
-        <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#fff', marginBottom: '1rem' }}>
-          📑 Recent Candidate Registrations
-        </h3>
-        {recentCandidates.length === 0 ? (
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No candidate applications registered yet.</p>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)', color: 'var(--text-muted)' }}>
-                  <th style={{ padding: '0.75rem 1rem' }}>Candidate Name</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Email</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Pipeline Status</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Skills Extracted</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentCandidates.map((c) => (
-                  <tr key={c.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
-                    <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#fff' }}>{c.name}</td>
-                    <td style={{ padding: '0.75rem 1rem', color: '#9ca3af' }}>{c.email}</td>
-                    <td style={{ padding: '0.75rem 1rem' }}>
-                      <span style={{
-                        background: `${getStatusColor(c.status)}22`,
-                        color: getStatusColor(c.status),
-                        border: `1px solid ${getStatusColor(c.status)}44`,
-                        padding: '0.2rem 0.6rem',
-                        borderRadius: '12px',
-                        fontSize: '0.775rem',
-                        fontWeight: 600,
-                      }}>
-                        {c.status}
-                      </span>
-                    </td>
-                    <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)' }}>
-                      {c.skillsCount} skills
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+    <section className="dashboard-grid dashboard-grid-secondary">
+      <article className="dashboard-panel recent-panel">
+        <PanelHeading title="Recent candidates" detail="Latest additions to your talent pool" />
+        {loading ? <div className="panel-loading">Loading candidates…</div> : !data?.recentCandidates?.length ? <div className="empty-panel compact"><strong>No candidates to show</strong><p>New resume uploads will show up here.</p></div> : <div className="table-scroll"><table className="dashboard-table"><thead><tr><th>Candidate</th><th>Pipeline stage</th><th>Skills</th></tr></thead><tbody>{data.recentCandidates.map((candidate) => <tr key={candidate.id}><td><div className="candidate-cell"><span className="candidate-avatar">{(candidate.name || '?').slice(0, 1).toUpperCase()}</span><span><strong>{candidate.name || 'Unnamed candidate'}</strong><small>{candidate.email}</small></span></div></td><td><span className={`status-badge status-${(candidate.status || 'Applied').toLowerCase()}`}>{candidate.status || 'Applied'}</span></td><td className="table-muted">{candidate.skillsCount || 0} skills</td></tr>)}</tbody></table></div>}
+      </article>
+      <article className="dashboard-panel alerts-panel">
+        <PanelHeading title="System alerts" detail="Hiring workspace status" />
+        <div className="system-status muted-status"><span className="system-status-icon"><ArrowDownRight size={17} /></span><span><strong>No alert feed connected</strong><small>Connect a monitoring source to view screening alerts and model drift.</small></span></div>
+        <div className="system-status muted-status"><span className="system-status-icon"><Clock3 size={17} /></span><span><strong>Monitoring data unavailable</strong><small>This workspace does not currently provide system alert metrics.</small></span></div>
+        <div className="alerts-footer"><span className="status-pulse" /> Waiting for monitoring data</div>
+      </article>
+    </section>
+  </div>;
 }
