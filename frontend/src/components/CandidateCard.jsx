@@ -5,7 +5,7 @@ import { deleteCandidate, updateCandidateStatus } from '../api/client';
 const stages = ['Applied', 'Screened', 'Interview', 'Offered', 'Rejected'];
 const normalizeSkill = (value) => String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
 
-export default function CandidateCard({ candidate, selectedJobId, selectedJobRequirements = [], matchData, onAnalyzeMatch, onOpenQA, onStatusUpdated, onCandidateDeleted }) {
+export default function CandidateCard({ candidate, selectedJobId, selectedJobTitle = '', selectedJobRequirements = [], matchData, onAnalyzeMatch, onOpenQA, onStatusUpdated, onCandidateDeleted }) {
   const [showResume, setShowResume] = useState(false);
   const [showMatch, setShowMatch] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -56,7 +56,9 @@ export default function CandidateCard({ candidate, selectedJobId, selectedJobReq
     if (!selectedJobId) { window.alert('Select a job posting to view a match breakdown.'); return; }
     if (!currentMatch && onAnalyzeMatch) {
       setLoadingMatch(true);
-      try { await onAnalyzeMatch(candidate, selectedJobId); } finally { setLoadingMatch(false); }
+      try { await onAnalyzeMatch(candidate, selectedJobId); }
+      catch (error) { window.alert(error.response?.data?.message || 'Could not load the match analysis.'); }
+      finally { setLoadingMatch(false); }
     }
     setShowMatch(true);
   };
@@ -78,7 +80,8 @@ export default function CandidateCard({ candidate, selectedJobId, selectedJobReq
 
       <div className="candidate-card-meta">
         <span className={`status-badge status-${currentStatus.toLowerCase()}`}>{currentStatus === 'Screened' ? 'Screening' : currentStatus}</span>
-        {selectedJobId && <span className="candidate-role-context">Compared with selected job</span>}
+        <span className="candidate-role-context">{experience[0]?.duration || (experience.length ? `${experience.length} experience ${experience.length === 1 ? 'entry' : 'entries'}` : 'Experience not listed')}</span>
+        {selectedJobId && <span className="candidate-role-context">{selectedJobTitle ? `Role fit · ${selectedJobTitle}` : 'Compared with selected job'}</span>}
       </div>
 
       <section className="candidate-key-skills">

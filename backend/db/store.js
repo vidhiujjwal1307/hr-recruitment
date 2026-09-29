@@ -38,5 +38,6 @@ const jobs = [
 ];
 
 const videoInterviews = [];
+const interviews = [];
 
-module.exports = { candidates, jobs, videoInterviews };
+module.exports = { candidates, jobs, videoInterviews, interviews };

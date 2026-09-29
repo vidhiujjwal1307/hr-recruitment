@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { Activity, BriefcaseBusiness, CalendarDays, ChevronDown, FileText, LayoutDashboard, LogOut, Menu, Search, Settings2, UserRound, Users, X, Bell } from 'lucide-react';
+import { Activity, BriefcaseBusiness, CalendarDays, ChevronDown, FileText, LayoutDashboard, LogOut, Menu, Search, Settings2, UserRound, Users, X, Bell, Video } from 'lucide-react';
 
 const navigation = [
   { id: 'analytics', label: 'Overview', icon: LayoutDashboard, group: 'Recruitment' },
   { id: 'match', label: 'Candidates', icon: Users, group: 'Recruitment' },
   { id: 'assessments', label: 'Assessments', icon: FileText, group: 'Recruitment' },
   { id: 'interviews', label: 'Interviews', icon: CalendarDays, group: 'Recruitment' },
-  { id: 'upload', label: 'Resume intake', icon: FileText, group: 'Recruitment' },
-  { id: 'jobs', label: 'Job postings', icon: BriefcaseBusiness, group: 'Recruitment' },
+  { id: 'upload', label: 'Resume Intake', icon: FileText, group: 'Recruitment' },
+  { id: 'jobs', label: 'Job Postings', icon: BriefcaseBusiness, group: 'Recruitment' },
+  { id: 'videoInterviews', label: 'Video Interviews', icon: Video, group: 'Recruitment' },
 ];
 
 export default function Navbar({ activeTab, setActiveTab, user, onLogout, onProfile, isProfile, onNavigate, onSearch, children }) {
@@ -50,7 +51,7 @@ export default function Navbar({ activeTab, setActiveTab, user, onLogout, onProf
 
         <div className="sidebar-section-label sidebar-admin-label">WORKSPACE</div>
         <nav className="sidebar-nav" aria-label="Workspace navigation">
-          <button className={`sidebar-link${isProfile ? ' active' : ''}`} onClick={goProfile}><Settings2 size={17} strokeWidth={1.8} /><span>Profile & settings</span></button>
+          <button className={`sidebar-link${isProfile ? ' active' : ''}`} onClick={goProfile}><Settings2 size={17} strokeWidth={1.8} /><span>Profile & Settings</span></button>
         </nav>
 
         <div className="sidebar-spacer" />

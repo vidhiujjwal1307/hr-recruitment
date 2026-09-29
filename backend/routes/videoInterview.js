@@ -22,6 +22,14 @@ function publicInterview(interview) {
   return { id: interview._id, question: interview.question, status: interview.status, errorMessage: interview.errorMessage || '' };
 }
 
+function recruiterInterview(interview) {
+  if (!interview) return null;
+  const record = typeof interview.toObject === 'function' ? interview.toObject() : { ...interview };
+  const token = record.accessToken;
+  delete record.accessToken;
+  return { ...record, sharePath: token ? `/video-interview/${token}` : '' };
+}
+
 async function verifyCandidateAndJob(candidateId, jobId) {
   if (usesMongo() && (!mongoose.isValidObjectId(candidateId) || !mongoose.isValidObjectId(jobId))) throw new Error('A valid candidate and job are required.');
   const [candidate, job] = usesMongo()
@@ -116,9 +124,9 @@ router.post('/upload', requireAuth, videoUpload.single('video'), async (req, res
 router.get('/candidate/:candidateId', requireAuth, async (req, res) => {
   try {
     const interviews = usesMongo()
-      ? await VideoInterview.find({ candidateId: req.params.candidateId }).sort({ createdAt: -1 }).select('-accessToken')
-      : store.videoInterviews.filter((item) => String(item.candidateId) === String(req.params.candidateId)).sort((a, b) => b.createdAt - a.createdAt).map(({ accessToken, ...interview }) => interview);
-    return res.json({ success: true, data: interviews });
+      ? await VideoInterview.find({ candidateId: req.params.candidateId }).sort({ createdAt: -1 })
+      : store.videoInterviews.filter((item) => String(item.candidateId) === String(req.params.candidateId)).sort((a, b) => b.createdAt - a.createdAt);
+    return res.json({ success: true, data: interviews.map(recruiterInterview) });
   } catch (error) {
     return res.status(400).json({ success: false, message: 'Could not load video interviews.' });
   }
@@ -126,9 +134,9 @@ router.get('/candidate/:candidateId', requireAuth, async (req, res) => {
 
 router.get('/:id', requireAuth, async (req, res) => {
   try {
-    const interview = usesMongo() ? await VideoInterview.findById(req.params.id).select('-accessToken') : await findInterviewById(req.params.id);
+    const interview = usesMongo() ? await VideoInterview.findById(req.params.id) : await findInterviewById(req.params.id);
     if (!interview) return res.status(404).json({ success: false, message: 'Video interview not found.' });
-    return res.json({ success: true, data: interview });
+    return res.json({ success: true, data: recruiterInterview(interview) });
   } catch (error) {
     return res.status(400).json({ success: false, message: 'Invalid video interview ID.' });
   }

@@ -22,9 +22,11 @@ const InterviewSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['scheduled', 'completed', 'cancelled'],
+      enum: ['scheduled', 'in_progress', 'completed', 'cancelled'],
       default: 'scheduled',
     },
+    interviewType: { type: String, default: 'Live Video Interview' },
+    durationMinutes: { type: Number, min: 5, max: 240, default: 30 },
     questions: {
       type: [String],
       default: [],

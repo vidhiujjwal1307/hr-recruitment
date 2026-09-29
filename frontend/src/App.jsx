@@ -7,6 +7,8 @@ import AnalyticsPage from './pages/AnalyticsPage';
 import LoginPage from './pages/LoginPage';
 import ProfilePage from './pages/ProfilePage';
 import VideoInterviewPage from './pages/VideoInterviewPage';
+import VideoInterviewsPage from './pages/VideoInterviewsPage';
+import InterviewsPage from './pages/InterviewsPage';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('analytics');
@@ -43,9 +45,10 @@ export default function App() {
             {activeTab === 'analytics' && <AnalyticsPage onNavigate={setActiveTab} />}
             {activeTab === 'upload' && <UploadResumePage />}
             {activeTab === 'jobs' && <JobPostingPage />}
+            {activeTab === 'videoInterviews' && <VideoInterviewsPage />}
             {activeTab === 'match' && <MatchResultsPage initialSearch={candidateSearch} />}
             {activeTab === 'assessments' && <MatchResultsPage mode="assessments" />}
-            {activeTab === 'interviews' && <MatchResultsPage initialStatus="Interview" mode="interviews" />}
+            {activeTab === 'interviews' && <InterviewsPage />}
           </>
         )}
       </main>

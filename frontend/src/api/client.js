@@ -101,6 +101,21 @@ export const scheduleInterview = async (scheduleData) => {
   return response.data;
 };
 
+export const getInterviews = async () => {
+  const response = await apiClient.get('/schedule');
+  return response.data;
+};
+
+export const updateInterviewStatus = async (interviewId, status) => {
+  const response = await apiClient.patch(`/schedule/${interviewId}/status`, { status });
+  return response.data;
+};
+
+export const rescheduleInterview = async (interviewId, scheduleData) => {
+  const response = await apiClient.put(`/schedule/${interviewId}`, scheduleData);
+  return response.data;
+};
+
 export const createVideoInterviewRequest = async (data) => {
   const response = await apiClient.post('/video-interview/request', data);
   return response.data;

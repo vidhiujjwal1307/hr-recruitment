@@ -10,10 +10,10 @@ function ScoreCard({ label, score, prominent = false }) {
       padding: '0.6rem 0.75rem',
       textAlign: 'center',
       borderRadius: '8px',
-      background: prominent ? 'rgba(99, 102, 241, 0.15)' : 'rgba(255, 255, 255, 0.04)',
-      border: prominent ? '1px solid rgba(129, 140, 248, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
+      background: prominent ? 'rgba(59, 130, 246, 0.14)' : 'rgba(255, 255, 255, 0.04)',
+      border: prominent ? '1px solid rgba(96, 165, 250, 0.35)' : '1px solid rgba(255, 255, 255, 0.08)',
     }}>
-      <div style={{ color: prominent ? '#c7d2fe' : 'var(--text-muted)', fontWeight: 600, fontSize: '0.75rem' }}>{label}</div>
+      <div style={{ color: prominent ? '#b8d8ff' : 'var(--text-muted)', fontWeight: 600, fontSize: '0.75rem' }}>{label}</div>
       <div style={{ color: prominent ? '#fff' : '#d1d5db', fontWeight: 700, fontSize: '1.1rem', marginTop: '0.2rem' }}>{scoreText(score)}</div>
     </div>
   );
@@ -43,8 +43,8 @@ export default function VideoInterviewResults({ candidateId, refreshKey }) {
 
   return (
     <section style={{ borderTop: '1px solid var(--border-color)', paddingTop: '0.85rem', marginTop: '0.5rem' }}>
-      <h4 style={{ color: '#a5b4fc', fontSize: '0.85rem', marginBottom: '0.5rem', fontWeight: 600 }}>
-        🎥 Video Screening Results
+        <h4 style={{ color: '#8abfff', fontSize: '0.85rem', marginBottom: '0.5rem', fontWeight: 600 }}>
+        Video interview analysis
       </h4>
       {interviews.map((interview) => (
         <div key={interview._id} style={{ background: 'rgba(0,0,0,0.25)', borderRadius: '8px', padding: '0.75rem', marginBottom: '0.5rem', fontSize: '0.825rem' }}>
@@ -96,7 +96,7 @@ export default function VideoInterviewResults({ candidateId, refreshKey }) {
 
               <button
                 onClick={() => setExpanded((curr) => ({ ...curr, [interview._id]: !curr[interview._id] }))}
-                style={{ color: '#a5b4fc', background: 'transparent', border: 'none', padding: 0, marginTop: '0.6rem', fontSize: '0.775rem', cursor: 'pointer', textDecoration: 'underline' }}
+                style={{ color: '#8abfff', background: 'transparent', border: 'none', padding: 0, marginTop: '0.6rem', fontSize: '0.775rem', cursor: 'pointer', textDecoration: 'underline' }}
               >
                 {expanded[interview._id] ? 'Hide Transcript' : 'Show Full Transcript'}
               </button>

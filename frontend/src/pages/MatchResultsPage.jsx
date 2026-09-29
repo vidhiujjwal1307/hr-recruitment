@@ -3,7 +3,7 @@ import { getCandidates, getJobs, matchCandidate, deleteCandidate } from '../api/
 import CandidateCard from '../components/CandidateCard';
 import CandidateQAModal from '../components/CandidateQAModal';
 
-export default function MatchResultsPage({ initialSearch = '', initialStatus = 'ALL', mode = 'candidates' }) {
+export default function MatchResultsPage({ initialSearch = '', mode = 'candidates' }) {
   const [candidates, setCandidates] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [selectedJobId, setSelectedJobId] = useState('');
@@ -14,7 +14,7 @@ export default function MatchResultsPage({ initialSearch = '', initialStatus = '
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState(initialSearch);
-  const [statusFilter, setStatusFilter] = useState(initialStatus);
+  const [statusFilter, setStatusFilter] = useState('ALL');
   const [selectedSkillFilter, setSelectedSkillFilter] = useState('ALL');
   const [minMatchScore, setMinMatchScore] = useState(0);
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'pipeline'
@@ -26,10 +26,6 @@ export default function MatchResultsPage({ initialSearch = '', initialStatus = '
   useEffect(() => {
     setSearchQuery(initialSearch);
   }, [initialSearch]);
-
-  useEffect(() => {
-    setStatusFilter(initialStatus);
-  }, [initialStatus]);
 
   const loadInitialData = async () => {
     setLoadingInitial(true);
@@ -374,12 +370,13 @@ export default function MatchResultsPage({ initialSearch = '', initialStatus = '
             No candidates matched the selected search or filter criteria. Try adjusting your filters or upload new resumes.
           </div>
         ) : viewMode === 'grid' ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '1.5rem' }}>
+          <div className="candidate-card-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '1rem' }}>
             {sortedCandidates.map((candidate) => (
               <CandidateCard
                 key={candidate._id || candidate.id}
                 candidate={candidate}
                 selectedJobId={selectedJobId}
+                selectedJobTitle={selectedJob?.title || ''}
                 selectedJobRequirements={selectedJob?.requirements || []}
                 matchData={matchDataMap}
                 onAnalyzeMatch={handleAnalyzeMatch}
