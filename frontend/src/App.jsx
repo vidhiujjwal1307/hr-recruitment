@@ -13,6 +13,7 @@ import InterviewsPage from './pages/InterviewsPage';
 export default function App() {
   const [activeTab, setActiveTab] = useState('analytics');
   const [candidateSearch, setCandidateSearch] = useState('');
+  const [matchScores, setMatchScores] = useState({});
   const [route, setRoute] = useState(() => window.location.pathname);
   const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(localStorage.getItem('authToken')));
   const [user, setUser] = useState(() => { try { return JSON.parse(localStorage.getItem('user')); } catch { return null; } });
@@ -29,6 +30,10 @@ export default function App() {
   };
   const handleLogin = (loggedInUser) => { setUser(loggedInUser); setIsAuthenticated(true); navigate('/'); };
   const handleLogout = () => { localStorage.removeItem('authToken'); localStorage.removeItem('user'); setUser(null); setIsAuthenticated(false); navigate('/login'); };
+  const rememberMatchScores = (scores, jobId) => setMatchScores((current) => ({
+    ...current,
+    ...Object.fromEntries(Object.entries(scores).map(([id, score]) => [id, { ...score, jobId }])),
+  }));
   const publicInterviewToken = route.startsWith('/video-interview/') ? route.split('/')[2] : '';
 
   if (publicInterviewToken) return <VideoInterviewPage token={publicInterviewToken} />;
@@ -42,12 +47,12 @@ export default function App() {
           <ProfilePage user={user} onLogout={handleLogout} />
         ) : (
           <>
-            {activeTab === 'analytics' && <AnalyticsPage onNavigate={setActiveTab} />}
+            {activeTab === 'analytics' && <AnalyticsPage onNavigate={setActiveTab} user={user} matchScores={matchScores} />}
             {activeTab === 'upload' && <UploadResumePage />}
             {activeTab === 'jobs' && <JobPostingPage />}
             {activeTab === 'videoInterviews' && <VideoInterviewsPage />}
-            {activeTab === 'match' && <MatchResultsPage initialSearch={candidateSearch} />}
-            {activeTab === 'assessments' && <MatchResultsPage mode="assessments" />}
+            {activeTab === 'match' && <MatchResultsPage initialSearch={candidateSearch} onMatchScores={rememberMatchScores} />}
+            {activeTab === 'assessments' && <MatchResultsPage mode="assessments" onMatchScores={rememberMatchScores} />}
             {activeTab === 'interviews' && <InterviewsPage />}
           </>
         )}

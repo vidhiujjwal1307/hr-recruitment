@@ -497,10 +497,8 @@ button {
 .brand-copy { display: flex; flex-direction: column; gap: 2px; }
 .brand-copy strong { font-size: 16px; font-weight: 650; letter-spacing: -.03em; }
 .brand-copy small { color: #697283; font-size: 9px; font-weight: 650; letter-spacing: .14em; }
-.sidebar-workspace { height: 39px; display: flex; align-items: center; gap: 9px; margin: 28px 2px 27px; padding: 0 10px; border: 1px solid #252a33; border-radius: 7px; color: #adb4c1; font-size: 11px; }
-.sidebar-workspace svg { margin-left: auto; color: #747d8c; }
-.workspace-dot { width: 7px; height: 7px; border-radius: 50%; background: #60a5fa; box-shadow: 0 0 0 3px rgba(59,130,246,.13); }
 .sidebar-section-label { padding: 0 10px; margin-bottom: 8px; color: #626a78; font-size: 9px; font-weight: 700; letter-spacing: .13em; }
+.app-sidebar > .sidebar-section-label:first-of-type { margin-top: 30px; }
 .sidebar-admin-label { margin-top: 30px; }
 .sidebar-nav { display: grid; gap: 3px; }
 .sidebar-link { position: relative; display: flex; align-items: center; gap: 11px; min-height: 38px; width: 100%; padding: 0 10px; border: 1px solid transparent; border-radius: 7px; background: transparent; color: #8b93a3; text-align: left; font-size: 12px; transition: background .16s, color .16s, border-color .16s; }
@@ -547,6 +545,8 @@ button {
 .spin-icon { animation: spin 1s linear infinite; }
 .metric-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 13px; margin-bottom: 14px; }
 .metric-card { min-height: 123px; padding: 15px 17px; border: 1px solid #252a33; border-radius: 9px; background: #151820; transition: border-color .18s, transform .18s; }
+.metric-card-button { display: block; width: 100%; color: inherit; font-family: inherit; text-align: left; }
+.metric-card-button:focus-visible { outline: 2px solid #60a5fa; outline-offset: 2px; }
 .metric-card:hover { transform: translateY(-2px); border-color: #343c49; }
 .metric-card-top { display: flex; align-items: center; justify-content: space-between; color: #8992a1; font-size: 9px; font-weight: 650; letter-spacing: .08em; }
 .metric-icon { display: grid; width: 29px; height: 29px; place-items: center; border: 1px solid; border-radius: 7px; }
@@ -606,16 +606,47 @@ button {
 .status-badge { display: inline-flex; align-items: center; padding: 3px 7px; border: 1px solid #303947; border-radius: 20px; background: #1a2029; color: #aeb7c5; font-size: 9px; }
 .status-applied { border-color: #264671; background: #17263a; color: #81b7ff; }.status-screened { border-color: #41406a; background: #232139; color: #b1a5ed; }.status-interview { border-color: #5c4a27; background: #2b251a; color: #e7bd67; }.status-offered { border-color: #28513d; background: #19291f; color: #7ed39c; }.status-rejected { border-color: #5c3033; background: #2b1c20; color: #e28a91; }
 .alerts-panel { display: flex; flex-direction: column; }
-.system-status { display: flex; gap: 10px; padding: 12px 0; border-bottom: 1px solid #252a33; }
-.system-status-icon { display: grid; width: 28px; height: 28px; flex: none; place-items: center; border: 1px solid #28513d; border-radius: 7px; background: #19291f; color: #70ca8e; }
-.system-status > span:last-child { display: flex; flex-direction: column; gap: 4px; }
-.system-status strong { color: #d4dae3; font-size: 10px; font-weight: 550; }
-.system-status small { color: #7d8694; font-size: 9px; line-height: 1.45; }
-.muted-status .system-status-icon { border-color: #41402d; background: #24231b; color: #c9ad64; }
-.alerts-footer { display: flex; align-items: center; gap: 7px; margin-top: auto; padding-top: 12px; color: #7d8694; font-size: 9px; }
-.status-pulse { width: 6px; height: 6px; border-radius: 50%; background: #58bd7e; box-shadow: 0 0 0 3px #58bd7e20; }
 .dashboard-error { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; padding: 10px 13px; border: 1px solid #5a3439; border-radius: 7px; background: #261a1e; color: #efa0a5; font-size: 11px; }
 .dashboard-error button { background: transparent; color: #ffc5c7; font-size: 10px; text-decoration: underline; }
+
+/* Hiring activity, interview reminders and dashboard actions */
+.hiring-alert-list { display: grid; gap: 2px; }
+.hiring-alert { position: relative; display: grid; grid-template-columns: 24px minmax(0,1fr); column-gap: 9px; padding: 10px 0 10px 9px; border-bottom: 1px solid #252a33; }
+.hiring-alert:last-child { border-bottom: 0; }
+.hiring-alert::before { position: absolute; inset: 10px auto 10px 0; width: 2px; border-radius: 2px; background: #586170; content: ''; }
+.hiring-alert-red::before { background: #d7666d; }.hiring-alert-yellow::before { background: #d8aa4a; }.hiring-alert-blue::before { background: #5799eb; }.hiring-alert-green::before { background: #53b477; }
+.hiring-alert-icon { display: grid; width: 23px; height: 23px; place-items: center; border-radius: 6px; background: #20242d; color: #a7b0be; }
+.hiring-alert-red .hiring-alert-icon { background: #2a1f23; color: #e78a90; }.hiring-alert-yellow .hiring-alert-icon { background: #29251b; color: #dfbd6e; }.hiring-alert-blue .hiring-alert-icon { background: #192538; color: #81b7f9; }.hiring-alert-green .hiring-alert-icon { background: #19271f; color: #79c895; }
+.hiring-alert-copy { min-width: 0; }
+.hiring-alert-priority { display: block; margin-bottom: 3px; color: #778191; font-size: 8px; font-weight: 650; letter-spacing: .09em; }
+.hiring-alert-copy strong { color: #d8dee7; font-size: 10px; font-weight: 560; }
+.hiring-alert-copy p { margin-top: 3px; color: #828c9a; font-size: 9px; line-height: 1.45; }
+.hiring-alert-action { grid-column: 2; justify-self: start; display: inline-flex; align-items: center; gap: 5px; margin-top: 5px; padding: 0; background: transparent; color: #83b9fb; font-size: 9px; }
+.hiring-alert-action:hover, .panel-link:hover, .inline-dashboard-action:hover { color: #b1d4ff; }
+.alerts-empty { min-height: 185px; }
+.panel-link { display: inline-flex; align-items: center; gap: 5px; padding: 3px 0; background: transparent; color: #80b7fb; font-size: 9px; white-space: nowrap; }
+.inline-dashboard-action { display: inline-flex; align-items: center; gap: 5px; margin-top: 9px; padding: 5px 0; background: transparent; color: #80b7fb; font-size: 10px; }
+.recent-candidates-table { min-width: 640px; }
+.recent-candidates-table td { padding-top: 9px; padding-bottom: 9px; }
+.table-match-score { color: #94c4ff !important; font-weight: 550; }
+.dashboard-grid-bottom { grid-template-columns: minmax(0,1.6fr) minmax(230px,.8fr); }
+.upcoming-panel, .quick-actions-panel { padding: 16px 18px 11px; }
+.upcoming-list { display: grid; }
+.upcoming-interview-row { display: grid; grid-template-columns: 28px minmax(95px,1fr) auto minmax(75px,.8fr) auto 25px; align-items: center; gap: 9px; min-height: 47px; border-top: 1px solid #252a33; }
+.upcoming-interview-person { display: flex; min-width: 0; flex-direction: column; gap: 3px; }
+.upcoming-interview-person strong { overflow: hidden; color: #dce2eb; font-size: 10px; font-weight: 550; text-overflow: ellipsis; white-space: nowrap; }
+.upcoming-interview-person small { overflow: hidden; color: #7d8795; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.upcoming-interview-time { color: #c0c9d6; font-size: 9px; white-space: nowrap; }
+.upcoming-interview-type { overflow: hidden; color: #8993a2; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.upcoming-interview-status { color: #8fc5a2; font-size: 9px; white-space: nowrap; }
+.upcoming-view-button { display: grid; width: 24px; height: 24px; place-items: center; border: 1px solid #303641; border-radius: 5px; background: #171b23; color: #8dbdff; }
+.upcoming-view-button:hover { border-color: #3b82f6; }
+.quick-action-list { display: grid; }
+.quick-action-list button { display: grid; grid-template-columns: 26px 1fr 16px; align-items: center; gap: 8px; min-height: 39px; border-top: 1px solid #252a33; background: transparent; color: #bac3cf; text-align: left; }
+.quick-action-list button > span { display: grid; width: 24px; height: 24px; place-items: center; border: 1px solid #2d3d53; border-radius: 6px; background: #182231; color: #83b8f6; }
+.quick-action-list button strong { font-size: 10px; font-weight: 520; }
+.quick-action-list button > svg { color: #687383; }
+.quick-action-list button:hover strong, .quick-action-list button:hover > svg { color: #9cc7ff; }
 
 /* Candidate pipeline cards and detail drawers */
 .candidate-card-grid { grid-template-columns: repeat(auto-fill,minmax(min(100%,350px),1fr)) !important; gap: 12px !important; }
@@ -801,6 +832,7 @@ input:focus, textarea:focus, select:focus { outline: 1px solid #3b82f6; outline-
   .app-container { padding: 25px 19px 36px; }
   .metric-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .dashboard-grid-primary, .dashboard-grid-secondary { grid-template-columns: 1fr; }
+  .dashboard-grid-bottom { grid-template-columns: 1fr; }
   .video-record-status { min-width: auto; }
   .interview-table-toolbar { align-items: flex-start; flex-direction: column; }
   .interview-table-toolbar .candidate-list-search { width: 100%; }
@@ -848,4 +880,8 @@ input:focus, textarea:focus, select:focus { outline: 1px solid #3b82f6; outline-
   .interview-questions-heading { align-items: flex-start; flex-direction: column; }
   .interview-setup-actions { flex-wrap: wrap; }
   .interview-setup-actions .btn-primary { flex: 1; justify-content: center; }
+  .upcoming-panel, .quick-actions-panel { padding: 14px 13px 9px; }
+  .upcoming-interview-row { grid-template-columns: 27px minmax(70px,1fr) auto auto 24px; gap: 7px; }
+  .upcoming-interview-type { display: none; }
+  .hiring-alert { grid-template-columns: 22px minmax(0,1fr); column-gap: 7px; }
 }

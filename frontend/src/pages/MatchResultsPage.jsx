@@ -3,7 +3,7 @@ import { getCandidates, getJobs, matchCandidate, deleteCandidate } from '../api/
 import CandidateCard from '../components/CandidateCard';
 import CandidateQAModal from '../components/CandidateQAModal';
 
-export default function MatchResultsPage({ initialSearch = '', mode = 'candidates' }) {
+export default function MatchResultsPage({ initialSearch = '', mode = 'candidates', onMatchScores }) {
   const [candidates, setCandidates] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [selectedJobId, setSelectedJobId] = useState('');
@@ -52,6 +52,7 @@ export default function MatchResultsPage({ initialSearch = '', mode = 'candidate
     setLoadingBatchMatch(true);
 
     const newMap = { ...matchDataMap };
+    const freshMap = {};
     try {
       await Promise.all(
         candidateList.map(async (cand) => {
@@ -60,6 +61,7 @@ export default function MatchResultsPage({ initialSearch = '', mode = 'candidate
             const matchRes = await matchCandidate(cId, jobId);
             if (matchRes.success) {
               newMap[cId] = matchRes.data;
+              freshMap[cId] = matchRes.data;
             }
           } catch (mErr) {
             console.error(`Match error for candidate ${cId}:`, mErr);
@@ -67,6 +69,7 @@ export default function MatchResultsPage({ initialSearch = '', mode = 'candidate
         })
       );
       setMatchDataMap(newMap);
+      onMatchScores?.(freshMap, jobId);
     } finally {
       setLoadingBatchMatch(false);
     }
@@ -88,6 +91,7 @@ export default function MatchResultsPage({ initialSearch = '', mode = 'candidate
         ...prev,
         [cId]: res.data,
       }));
+      onMatchScores?.({ [cId]: res.data }, jobId);
     }
   };
 

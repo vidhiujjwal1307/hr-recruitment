@@ -38,7 +38,6 @@ export default function Navbar({ activeTab, setActiveTab, user, onLogout, onProf
           <span className="brand-copy"><strong>HireSight</strong><small>ENTERPRISE</small></span>
         </button>
 
-        <div className="sidebar-workspace"><span className="workspace-dot" /> Talent workspace <ChevronDown size={14} /></div>
         <div className="sidebar-section-label">RECRUITMENT</div>
         <nav className="sidebar-nav" aria-label="Main navigation">
           {navigation.map(({ id, label, icon: Icon }) => (
