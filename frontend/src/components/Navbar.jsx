@@ -1,17 +1,21 @@
 import React, { useState } from 'react';
-import { Activity, BriefcaseBusiness, CalendarDays, ChevronDown, FileText, LayoutDashboard, LogOut, Menu, Search, Settings2, UserRound, Users, X, Bell, Video } from 'lucide-react';
+import { Activity, CalendarDays, ChevronDown, FileText, LayoutDashboard, LogOut, Menu, Search, Settings2, UserRound, Users, X, Bell, UserPlus, BriefcaseBusiness, Upload } from 'lucide-react';
 
 const navigation = [
   { id: 'analytics', label: 'Overview', icon: LayoutDashboard, group: 'Recruitment' },
   { id: 'match', label: 'Candidates', icon: Users, group: 'Recruitment' },
-  { id: 'assessments', label: 'Assessments', icon: FileText, group: 'Recruitment' },
+  { id: 'assessments', label: 'AI Screening', icon: FileText, group: 'Recruitment' },
   { id: 'interviews', label: 'Interviews', icon: CalendarDays, group: 'Recruitment' },
-  { id: 'upload', label: 'Resume Intake', icon: FileText, group: 'Recruitment' },
-  { id: 'jobs', label: 'Job Postings', icon: BriefcaseBusiness, group: 'Recruitment' },
-  { id: 'videoInterviews', label: 'Video Interviews', icon: Video, group: 'Recruitment' },
 ];
 
-export default function Navbar({ activeTab, setActiveTab, user, onLogout, onProfile, isProfile, onNavigate, onSearch, children }) {
+const hiringTools = [
+  { id: 'upload', label: 'Add Candidate', icon: UserPlus },
+  { id: 'jobs', label: 'Create Job', icon: BriefcaseBusiness },
+  { id: 'upload', label: 'Upload Resume', icon: Upload },
+  { id: 'interviews', label: 'Schedule Interview', icon: CalendarDays },
+];
+
+export default function Navbar({ activeTab, setActiveTab, user, onLogout, onProfile, isProfile, onNavigate, onSearch, onScheduleInterview, children }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [searchText, setSearchText] = useState('');
@@ -22,6 +26,11 @@ export default function Navbar({ activeTab, setActiveTab, user, onLogout, onProf
     setActiveTab(itemId);
     setMenuOpen(false);
     if (onNavigate) onNavigate('/');
+  };
+
+  const handleHiringToolClick = (item) => {
+    handleNavClick(item.id);
+    if (item.label === 'Schedule Interview') onScheduleInterview?.();
   };
 
   const goProfile = () => {
@@ -35,7 +44,7 @@ export default function Navbar({ activeTab, setActiveTab, user, onLogout, onProf
       <aside className={`app-sidebar${menuOpen ? ' app-sidebar-open' : ''}`}>
         <button className="brand-lockup" onClick={() => handleNavClick('analytics')} aria-label="HireSight overview">
           <span className="brand-mark"><Activity size={17} strokeWidth={2.4} /></span>
-          <span className="brand-copy"><strong>HireSight</strong><small>ENTERPRISE</small></span>
+          <span className="brand-copy"><strong>HireSight</strong></span>
         </button>
 
         <div className="sidebar-section-label">RECRUITMENT</div>
@@ -44,6 +53,15 @@ export default function Navbar({ activeTab, setActiveTab, user, onLogout, onProf
             <button key={id} className={`sidebar-link${!isProfile && activeTab === id ? ' active' : ''}`} onClick={() => handleNavClick(id)}>
               <Icon size={17} strokeWidth={1.8} /><span>{label}</span>
               {id === 'match' && <span className="nav-link-dot" />}
+            </button>
+          ))}
+        </nav>
+
+        <div className="sidebar-section-label">HIRING TOOLS</div>
+        <nav className="sidebar-nav" aria-label="Hiring tools">
+          {hiringTools.map(({ id, label, icon: Icon }) => (
+            <button key={label} className="sidebar-link" onClick={() => handleHiringToolClick({ id, label })}>
+              <Icon size={17} strokeWidth={1.8} /><span>{label}</span>
             </button>
           ))}
         </nav>

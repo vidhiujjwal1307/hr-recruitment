@@ -18,7 +18,8 @@ const InterviewSchema = new mongoose.Schema(
     },
     interviewerEmail: {
       type: String,
-      required: true,
+      trim: true,
+      default: '',
     },
     status: {
       type: String,

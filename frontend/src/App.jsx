@@ -7,13 +7,13 @@ import AnalyticsPage from './pages/AnalyticsPage';
 import LoginPage from './pages/LoginPage';
 import ProfilePage from './pages/ProfilePage';
 import VideoInterviewPage from './pages/VideoInterviewPage';
-import VideoInterviewsPage from './pages/VideoInterviewsPage';
 import InterviewsPage from './pages/InterviewsPage';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('analytics');
   const [candidateSearch, setCandidateSearch] = useState('');
   const [matchScores, setMatchScores] = useState({});
+  const [interviewPageKey, setInterviewPageKey] = useState(0);
   const [route, setRoute] = useState(() => window.location.pathname);
   const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(localStorage.getItem('authToken')));
   const [user, setUser] = useState(() => { try { return JSON.parse(localStorage.getItem('user')); } catch { return null; } });
@@ -41,19 +41,18 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <Navbar activeTab={activeTab} setActiveTab={setActiveTab} user={user} onLogout={handleLogout} onProfile={() => navigate('/profile')} isProfile={route === '/profile'} onNavigate={navigate} onSearch={(query) => { setCandidateSearch(query); setActiveTab('match'); navigate('/'); }}>
+      <Navbar activeTab={activeTab} setActiveTab={setActiveTab} user={user} onLogout={handleLogout} onProfile={() => navigate('/profile')} isProfile={route === '/profile'} onNavigate={navigate} onScheduleInterview={() => setInterviewPageKey((key) => key + 1)} onSearch={(query) => { setCandidateSearch(query); setActiveTab('match'); navigate('/'); }}>
       <main className="app-container">
         {route === '/profile' ? (
           <ProfilePage user={user} onLogout={handleLogout} />
         ) : (
           <>
-            {activeTab === 'analytics' && <AnalyticsPage onNavigate={setActiveTab} user={user} matchScores={matchScores} />}
+            {activeTab === 'analytics' && <AnalyticsPage onNavigate={setActiveTab} onSessionExpired={handleLogout} user={user} matchScores={matchScores} />}
             {activeTab === 'upload' && <UploadResumePage />}
             {activeTab === 'jobs' && <JobPostingPage />}
-            {activeTab === 'videoInterviews' && <VideoInterviewsPage />}
-            {activeTab === 'match' && <MatchResultsPage initialSearch={candidateSearch} onMatchScores={rememberMatchScores} />}
+            {activeTab === 'match' && <MatchResultsPage initialSearch={candidateSearch} onMatchScores={rememberMatchScores} onNavigate={setActiveTab} />}
             {activeTab === 'assessments' && <MatchResultsPage mode="assessments" onMatchScores={rememberMatchScores} />}
-            {activeTab === 'interviews' && <InterviewsPage />}
+            {activeTab === 'interviews' && <InterviewsPage key={interviewPageKey} onSessionExpired={handleLogout} />}
           </>
         )}
       </main>

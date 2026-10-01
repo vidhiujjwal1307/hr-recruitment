@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Eye, Trash2, X } from 'lucide-react';
 import { createJob, getJobs, deleteJob } from '../api/client';
 
 export default function JobPostingPage() {
@@ -13,6 +14,7 @@ export default function JobPostingPage() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [viewingJob, setViewingJob] = useState(null);
 
   useEffect(() => {
     fetchJobs();
@@ -216,7 +218,7 @@ export default function JobPostingPage() {
         </div>
 
         <div>
-          <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem', fontWeight: 600 }}>Active Requisitions ({jobs.length})</h2>
+          <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem', fontWeight: 600 }}>Job postings ({jobs.length})</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {jobs.length === 0 ? (
               <div className="card" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
@@ -226,48 +228,18 @@ export default function JobPostingPage() {
               jobs.map((job) => {
                 const jId = job._id || job.id;
                 return (
-                  <div key={jId} className="card" style={{ opacity: deletingId === jId ? 0.5 : 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#fff', margin: 0 }}>{job.title}</h3>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span style={{ fontSize: '0.8rem', color: '#818cf8', background: 'rgba(99, 102, 241, 0.15)', padding: '0.2rem 0.6rem', borderRadius: '12px', border: '1px solid rgba(99, 102, 241, 0.3)' }}>
-                          {job.location}
-                        </span>
-                        <button
-                          onClick={() => handleDeleteJob(jId, job.title)}
-                          disabled={deletingId === jId}
-                          title="Delete job posting"
-                          style={{
-                            background: 'rgba(239, 68, 68, 0.12)',
-                            border: '1px solid rgba(239, 68, 68, 0.3)',
-                            color: '#f87171',
-                            borderRadius: '6px',
-                            padding: '0.25rem 0.5rem',
-                            fontSize: '0.85rem',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </div>
-
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', margin: '0.5rem 0' }}>{job.description}</p>
-
-                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                      {job.requirements?.map((req, i) => (
-                        <span key={i} style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.06)', padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
-                          {req}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
+                  <article key={jId} className="card job-summary-card" style={{ opacity: deletingId === jId ? 0.5 : 1 }}>
+                    <div className="job-summary-header"><div><h3>{job.title}</h3><p>{job.location || 'Location not set'}</p></div><span className={`job-status-pill ${job.status === 'closed' ? 'closed' : job.status === 'draft' ? 'draft' : ''}`}>{job.status || 'open'}</span></div>
+                    <div className="job-summary-meta"><span>{job.applicantsCount != null || job.applicantCount != null ? `${job.applicantsCount ?? job.applicantCount} applicants` : 'Applicants not tracked'}</span><span>{job.createdAt ? new Date(job.createdAt).toLocaleDateString() : 'Posted date unavailable'}</span></div>
+                    <div className="job-summary-actions"><button className="candidate-action-button" onClick={() => setViewingJob(job)}><Eye size={14} /> View Job</button><button className="candidate-action-button danger-action" onClick={() => handleDeleteJob(jId, job.title)} disabled={deletingId === jId} title="Delete job posting"><Trash2 size={14} /> {deletingId === jId ? 'Deleting...' : 'Delete'}</button></div>
+                  </article>
                 );
               })
             )}
           </div>
         </div>
       </div>
+      {viewingJob && <div className="detail-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setViewingJob(null); }}><section className="detail-modal job-detail-modal" role="dialog" aria-modal="true" aria-labelledby="job-detail-title"><header className="detail-modal-header"><div><span className="eyebrow">JOB POSTING</span><h2 id="job-detail-title">{viewingJob.title}</h2><p>{viewingJob.location || 'Location not set'} · {viewingJob.status || 'open'}</p></div><button className="icon-button" onClick={() => setViewingJob(null)} aria-label="Close job details"><X size={18} /></button></header><div className="candidate-detail-section"><h3>Job description</h3><p>{viewingJob.description || 'No description provided.'}</p></div><div className="candidate-detail-section"><h3>Required skills</h3>{viewingJob.requirements?.length ? <div className="candidate-detail-skills">{viewingJob.requirements.map((requirement) => <span key={requirement}>{requirement}</span>)}</div> : <p>No required skills listed.</p>}</div><div className="candidate-detail-section"><p>{viewingJob.applicantsCount ?? viewingJob.applicantCount ?? '—'} applicants · Posted {viewingJob.createdAt ? new Date(viewingJob.createdAt).toLocaleDateString() : 'date unavailable'}</p></div></section></div>}
     </div>
   );
 }

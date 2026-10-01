@@ -1,16 +1,53 @@
 import React, { useState, useEffect } from 'react';
-import { getCandidates, getJobs, matchCandidate, deleteCandidate } from '../api/client';
+import { ArrowRight, FileText, Search, UserRound, X } from 'lucide-react';
+import { getCandidates, getJobs, matchCandidate, deleteCandidate, updateCandidateStatus } from '../api/client';
 import CandidateCard from '../components/CandidateCard';
 import CandidateQAModal from '../components/CandidateQAModal';
 
-export default function MatchResultsPage({ initialSearch = '', mode = 'candidates', onMatchScores }) {
+const candidateStages = ['Applied', 'Screened', 'Interview', 'Offered', 'Rejected'];
+
+function CandidateDetailsDialog({ candidate, match, onClose, onStatusUpdated, onDeleted, onOpenQA }) {
+  const [stage, setStage] = useState(candidate.status || 'Applied');
+  const [savingStage, setSavingStage] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const id = candidate._id || candidate.id;
+  const experience = Array.isArray(candidate.experience) ? candidate.experience : [];
+  const updateStage = async (event) => {
+    const next = event.target.value;
+    setSavingStage(true);
+    try { await updateCandidateStatus(id, next); setStage(next); onStatusUpdated(id, next); }
+    catch (error) { window.alert(error.response?.data?.message || 'Could not update candidate stage.'); }
+    finally { setSavingStage(false); }
+  };
+  const removeCandidate = async () => {
+    if (!window.confirm(`Delete ${candidate.name || 'this candidate'} permanently?`)) return;
+    setDeleting(true);
+    try { await deleteCandidate(id); onDeleted(id); onClose(); }
+    catch (error) { window.alert(error.response?.data?.message || 'Could not delete candidate.'); setDeleting(false); }
+  };
+  return <div className="detail-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><section className="detail-modal candidate-detail-modal" role="dialog" aria-modal="true" aria-labelledby={`candidate-detail-${id}`}>
+    <header className="detail-modal-header"><div><span className="eyebrow">CANDIDATE PROFILE</span><h2 id={`candidate-detail-${id}`}>{candidate.name || 'Unnamed candidate'}</h2><p>{candidate.email || 'No email provided'}</p></div><button className="icon-button" onClick={onClose} aria-label="Close candidate details"><X size={18} /></button></header>
+    <div className="candidate-detail-summary"><span className="candidate-avatar">{candidate.name?.slice(0, 1)?.toUpperCase() || <UserRound size={16} />}</span><span className={`status-badge status-${stage.toLowerCase()}`}>{stage === 'Screened' ? 'Screening' : stage}</span><label>Pipeline stage<select value={stage} onChange={updateStage} disabled={savingStage}>{candidateStages.map((item) => <option key={item} value={item}>{item === 'Screened' ? 'Screening' : item}</option>)}</select></label><span className="candidate-detail-score"><strong>{match?.matchScore == null ? '—' : `${match.matchScore}%`}</strong><small>Match score</small></span></div>
+    {match?.summary && <section className="candidate-detail-section"><h3>AI screening summary</h3><p>{match.summary}</p></section>}
+    <section className="candidate-detail-section"><h3>Skills</h3>{candidate.skills?.length ? <div className="candidate-detail-skills">{candidate.skills.map((skill) => <span key={skill}>{skill}</span>)}</div> : <p>No extracted skills are available.</p>}</section>
+    <section className="candidate-detail-section"><h3>Experience</h3>{experience.length ? experience.map((item, index) => <p key={index}><strong>{item.role || item.title || 'Experience'}</strong>{item.company ? ` · ${item.company}` : ''}{item.duration ? ` · ${item.duration}` : ''}{item.description ? <small>{item.description}</small> : null}</p>) : <p>No structured experience was found.</p>}</section>
+    <section className="candidate-detail-section"><h3>Resume</h3><pre>{candidate.rawText || 'Resume text is not available.'}</pre></section>
+    <footer className="candidate-detail-actions"><button className="candidate-action-button" onClick={() => onOpenQA(candidate)}><FileText size={14} /> Resume Q&amp;A</button><button className="candidate-action-button danger-action" onClick={removeCandidate} disabled={deleting}>{deleting ? 'Removing…' : 'Delete candidate'}</button></footer>
+  </section></div>;
+}
+
+export default function MatchResultsPage({ initialSearch = '', mode = 'candidates', onMatchScores, onNavigate }) {
   const [candidates, setCandidates] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [selectedJobId, setSelectedJobId] = useState('');
   const [matchDataMap, setMatchDataMap] = useState({});
   const [loadingInitial, setLoadingInitial] = useState(true);
+  const [dataError, setDataError] = useState('');
   const [loadingBatchMatch, setLoadingBatchMatch] = useState(false);
   const [activeQAModalCandidate, setActiveQAModalCandidate] = useState(null);
+  const [selectedCandidate, setSelectedCandidate] = useState(null);
+  const [reviewCandidate, setReviewCandidate] = useState(null);
+  const [selectingId, setSelectingId] = useState('');
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState(initialSearch);
@@ -28,23 +65,20 @@ export default function MatchResultsPage({ initialSearch = '', mode = 'candidate
   }, [initialSearch]);
 
   const loadInitialData = async () => {
-    setLoadingInitial(true);
-    try {
-      const [candRes, jobRes] = await Promise.all([getCandidates(), getJobs()]);
-      const fetchedCandidates = candRes.data || [];
-      const fetchedJobs = jobRes.data || [];
-      setCandidates(fetchedCandidates);
-      setJobs(fetchedJobs);
-
-      if (fetchedJobs.length > 0) {
-        setSelectedJobId(fetchedJobs[0]._id || fetchedJobs[0].id);
-        runMatchesForJob(fetchedJobs[0]._id || fetchedJobs[0].id, fetchedCandidates);
-      }
-    } catch (err) {
-      console.error('Failed to load candidate or job data:', err);
-    } finally {
-      setLoadingInitial(false);
+    setLoadingInitial(true); setDataError('');
+    const [candidateResult, jobResult] = await Promise.allSettled([getCandidates(), getJobs()]);
+    const fetchedCandidates = candidateResult.status === 'fulfilled' && Array.isArray(candidateResult.value?.data) ? candidateResult.value.data : [];
+    const fetchedJobs = jobResult.status === 'fulfilled' && Array.isArray(jobResult.value?.data) ? jobResult.value.data : [];
+    setCandidates(fetchedCandidates); setJobs(fetchedJobs);
+    const failures = [];
+    if (candidateResult.status === 'rejected') failures.push(candidateResult.reason?.response?.data?.message || 'Candidate data could not be loaded.');
+    if (jobResult.status === 'rejected' && mode !== 'candidates') failures.push(jobResult.reason?.response?.data?.message || 'Job data could not be loaded.');
+    if (failures.length) setDataError(failures.join(' '));
+    if (fetchedJobs.length > 0) {
+      setSelectedJobId(fetchedJobs[0]._id || fetchedJobs[0].id);
+      if (fetchedCandidates.length) runMatchesForJob(fetchedJobs[0]._id || fetchedJobs[0].id, fetchedCandidates);
     }
+    setLoadingInitial(false);
   };
 
   const runMatchesForJob = async (jobId, candidateList = candidates) => {
@@ -103,6 +137,17 @@ export default function MatchResultsPage({ initialSearch = '', mode = 'candidate
 
   const handleCandidateDeleted = (candidateId) => {
     setCandidates((prev) => prev.filter((c) => (c._id || c.id) !== candidateId));
+  };
+
+  const selectCandidateForInterview = async (candidate) => {
+    const id = candidate._id || candidate.id;
+    setSelectingId(String(id));
+    try {
+      await updateCandidateStatus(id, 'Interview');
+      handleStatusUpdated(id, 'Interview');
+    } catch (error) {
+      window.alert(error.response?.data?.message || 'Could not select this candidate for interview.');
+    } finally { setSelectingId(''); }
   };
 
   const handleDeleteKanbanCandidate = async (candidateId, name) => {
@@ -168,11 +213,46 @@ export default function MatchResultsPage({ initialSearch = '', mode = 'candidate
   const pipelineStages = ['Applied', 'Screened', 'Interview', 'Offered', 'Rejected'];
   const selectedJob = jobs.find((j) => (j._id || j.id) === selectedJobId);
 
+  if (mode === 'candidates') {
+    const visible = candidates.filter((candidate) => {
+      const query = searchQuery.trim().toLowerCase();
+      const name = candidate.name || '';
+      const email = candidate.email || '';
+      const stage = candidate.status || 'Applied';
+      return (!query || `${name} ${email}`.toLowerCase().includes(query)) && (statusFilter === 'ALL' || stage === statusFilter);
+    });
+    const roleForCandidate = (candidate) => {
+      const linkedJob = typeof candidate.jobId === 'object' ? candidate.jobId : typeof candidate.job === 'object' ? candidate.job : jobs.find((job) => String(job._id || job.id) === String(candidate.jobId || candidate.job));
+      return candidate.appliedFor || candidate.jobTitle || candidate.role || linkedJob?.title || 'Not assigned';
+    };
+    const closeDetails = () => setSelectedCandidate(null);
+    return <div className="candidates-page">
+      <header className="page-header candidates-page-header"><div><div className="eyebrow">TALENT OPERATIONS <span /> CANDIDATE PIPELINE</div><h1 className="page-title">Candidates</h1><p className="page-subtitle">Review applicants and keep track of each candidate’s stage.</p></div><span className="candidate-count-pill">{candidates.length} {candidates.length === 1 ? 'candidate' : 'candidates'}</span></header>
+      <section className="candidate-list-panel"><div className="candidate-list-toolbar"><label className="candidate-search-field"><Search size={15} /><input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search candidates..." aria-label="Search candidates" /></label><label className="candidate-stage-filter">Pipeline status<select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="ALL">All stages</option>{candidateStages.map((stage) => <option key={stage} value={stage}>{stage === 'Screened' ? 'Screening' : stage}</option>)}</select></label></div>
+        {loadingInitial ? <div className="panel-loading">Loading candidates…</div> : candidates.length === 0 ? <div className="empty-panel candidate-list-empty"><span className="empty-icon"><UserRound size={18} /></span><strong>{dataError ? 'Candidate data could not be loaded.' : 'No candidates yet.'}</strong><p>{dataError || 'Upload resumes to add candidates to your pipeline.'}</p>{dataError ? <button className="inline-dashboard-action" onClick={loadInitialData}>Retry <ArrowRight size={13} /></button> : <button className="inline-dashboard-action" onClick={() => onNavigate?.('upload')}>Upload Resume <ArrowRight size={13} /></button>}</div> : visible.length === 0 ? <div className="empty-panel compact"><strong>No candidates match these filters.</strong></div> : <div className="table-scroll"><table className="dashboard-table candidates-page-table"><thead><tr><th>Candidate</th><th>Applied for</th><th>Stage</th><th>Match</th><th>Action</th></tr></thead><tbody>{visible.map((candidate) => { const id = candidate._id || candidate.id; const stage = candidate.status || 'Applied'; const score = matchDataMap[id]?.matchScore; const selectedForInterview = stage === 'Interview'; return <tr key={id}><td><button className="candidate-list-open" onClick={() => setSelectedCandidate(candidate)}><span className="candidate-avatar">{candidate.name?.slice(0, 1)?.toUpperCase() || <UserRound size={15} />}</span><span><strong>{candidate.name || 'Unnamed candidate'}</strong><small>{candidate.email || 'No email provided'}</small></span></button></td><td className="table-muted">{roleForCandidate(candidate)}</td><td><span className={`status-badge status-${stage.toLowerCase()}`}>{stage === 'Screened' ? 'Screening' : stage}</span></td><td className="table-match-score">{score == null ? '—' : `${score}%`}</td><td>{selectedForInterview ? <button className="candidate-interview-action selected" onClick={() => onNavigate?.('interviews')}>View Interview <ArrowRight size={12} /></button> : <button className="candidate-interview-action" onClick={() => selectCandidateForInterview(candidate)} disabled={selectingId === String(id)}>{selectingId === String(id) ? 'Selecting…' : 'Select for Interview'}</button>}</td></tr>; })}</tbody></table></div>}
+      </section>
+      {selectedCandidate && <CandidateDetailsDialog candidate={selectedCandidate} match={matchDataMap[selectedCandidate._id || selectedCandidate.id]} onClose={closeDetails} onStatusUpdated={(id, stage) => { setCandidates((current) => current.map((item) => String(item._id || item.id) === String(id) ? { ...item, status: stage } : item)); setSelectedCandidate((current) => current ? { ...current, status: stage } : current); }} onDeleted={(id) => setCandidates((current) => current.filter((item) => String(item._id || item.id) !== String(id)))} onOpenQA={(candidate) => { closeDetails(); setActiveQAModalCandidate(candidate); }} />}
+      {activeQAModalCandidate && <CandidateQAModal candidate={activeQAModalCandidate} onClose={() => setActiveQAModalCandidate(null)} />}
+    </div>;
+  }
+
+  if (mode === 'assessments') {
+    return <div className="screening-page">
+      <header className="page-header"><div><div className="eyebrow">TALENT OPERATIONS <span /> CANDIDATE SCREENING</div><h1 className="page-title">AI Screening</h1><p className="page-subtitle">Review candidate matches and AI-powered screening insights.</p></div></header>
+      <section className="dashboard-panel screening-target-panel"><div><h2>Target job</h2><p>Select a role to compare candidates against.</p></div><select aria-label="Select target job" value={selectedJobId} onChange={handleJobSelectChange}><option value="">Select a job</option>{jobs.map((job) => <option key={job._id || job.id} value={job._id || job.id}>{job.title}</option>)}</select></section>
+      <section className="dashboard-panel screening-list-panel"><div className="screening-list-heading"><div><h2>Candidate screening</h2><p>{selectedJob?.title || 'Select a target job to review candidates.'}</p></div><span>{sortedCandidates.length} candidates</span></div><div className="candidate-list-toolbar"><label className="candidate-search-field"><Search size={15} /><input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search candidates..." aria-label="Search screening candidates" /></label></div>
+        {loadingInitial ? <div className="panel-loading">Loading candidates…</div> : !candidates.length ? <div className="empty-panel candidate-list-empty"><strong>No candidates yet.</strong><p>Upload resumes to start screening candidates.</p></div> : !selectedJobId ? <div className="empty-panel compact"><strong>Select a target job to view match scores.</strong></div> : sortedCandidates.length === 0 ? <div className="empty-panel compact"><strong>No candidates match this search.</strong></div> : <div className="table-scroll"><table className="dashboard-table screening-table"><thead><tr><th>Candidate</th><th>Role</th><th>Match score</th><th>Stage</th><th>Screening status</th><th>Action</th></tr></thead><tbody>{sortedCandidates.map((candidate) => { const id = candidate._id || candidate.id; const score = matchDataMap[id]?.matchScore; const stage = candidate.status || 'Applied'; return <tr key={id}><td><div className="candidate-cell"><span className="candidate-avatar">{candidate.name?.slice(0, 1)?.toUpperCase() || <UserRound size={15} />}</span><span><strong>{candidate.name || 'Unnamed candidate'}</strong><small>{candidate.email || 'No email provided'}</small></span></div></td><td className="table-muted">{selectedJob?.title || '—'}</td><td className="table-match-score">{score == null ? '—' : `${score}%`}</td><td><span className={`status-badge status-${stage.toLowerCase()}`}>{stage === 'Screened' ? 'Screening' : stage}</span></td><td><span className={`screening-ready${score == null ? ' pending' : ''}`}>{score == null ? loadingBatchMatch ? 'Analyzing' : 'Not assessed' : 'Ready'}</span></td><td><button className="candidate-interview-action" onClick={() => setReviewCandidate(candidate)}>Review</button></td></tr>; })}</tbody></table></div>}
+      </section>
+      {reviewCandidate && <div className="detail-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setReviewCandidate(null); }}><section className="detail-modal screening-review-modal" role="dialog" aria-modal="true" aria-label={`Review ${reviewCandidate.name || 'candidate'}`}><header className="detail-modal-header"><div><span className="eyebrow">AI SCREENING REVIEW</span><h2>{reviewCandidate.name || 'Candidate'}</h2><p>{selectedJob?.title || 'Target job'}</p></div><button className="icon-button" onClick={() => setReviewCandidate(null)} aria-label="Close screening review"><X size={18} /></button></header><CandidateCard candidate={reviewCandidate} selectedJobId={selectedJobId} selectedJobTitle={selectedJob?.title || ''} selectedJobRequirements={selectedJob?.requirements || []} matchData={matchDataMap} onAnalyzeMatch={handleAnalyzeMatch} onOpenQA={setActiveQAModalCandidate} onStatusUpdated={handleStatusUpdated} onCandidateDeleted={(id) => { handleCandidateDeleted(id); setReviewCandidate(null); }} /></section></div>}
+      {activeQAModalCandidate && <CandidateQAModal candidate={activeQAModalCandidate} onClose={() => setActiveQAModalCandidate(null)} />}
+    </div>;
+  }
+
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">{mode === 'interviews' ? 'Interviews' : mode === 'assessments' ? 'Assessments' : 'Candidates'}</h1>
-        <p className="page-subtitle">{mode === 'interviews' ? 'Candidates in the interview stage, with scheduling and video screening tools.' : mode === 'assessments' ? 'Run AI match analysis and create tailored interview questions.' : 'Manage and evaluate your talent pipeline.'}</p>
+        <h1 className="page-title">{mode === 'interviews' ? 'Interviews' : 'AI Screening'}</h1>
+        <p className="page-subtitle">{mode === 'interviews' ? 'Candidates in the interview stage, with scheduling and video screening tools.' : 'Review candidate matches and AI-powered screening insights.'}</p>
       </div>
 
       {/* Target Job Selector Card */}
@@ -202,11 +282,6 @@ export default function MatchResultsPage({ initialSearch = '', mode = 'candidate
           ))}
         </select>
 
-        {selectedJob && (
-          <div style={{ marginTop: '0.75rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-            <strong>Selected Job Requirements:</strong> {selectedJob.requirements?.join(', ') || 'General qualifications'}
-          </div>
-        )}
       </div>
 
       {/* Search & Filter Controls Bar */}

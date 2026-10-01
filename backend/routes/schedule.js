@@ -1,22 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const Interview = require('../models/Interview');
+const Candidate = require('../models/Candidate');
 const Job = require('../models/Job');
 const { sendInterviewInvite } = require('../services/emailService');
 const mongoose = require('mongoose');
-const store = require('../db/store');
 
 router.get('/', async (req, res) => {
   try {
-    if (mongoose.connection.readyState === 1) {
-      const interviews = await Interview.find().sort({ scheduledDate: 1 }).populate('candidateId', 'name email skills status').populate('jobId', 'title');
-      return res.json({ success: true, count: interviews.length, data: interviews });
-    }
-    const interviews = (store.interviews || []).map((interview) => ({
-      ...interview,
-      candidateId: store.candidates.find((candidate) => String(candidate._id || candidate.id) === String(interview.candidateId)) || null,
-      jobId: store.jobs.find((job) => String(job._id || job.id) === String(interview.jobId)) || null,
-    })).sort((a, b) => new Date(a.scheduledDate) - new Date(b.scheduledDate));
+    if (mongoose.connection.readyState !== 1) return res.status(503).json({ success: false, message: 'Interview data is unavailable because the database connection is not active.' });
+    const interviews = await Interview.find().sort({ scheduledDate: 1 }).populate('candidateId', 'name email skills status').populate('jobId', 'title');
     return res.json({ success: true, count: interviews.length, data: interviews });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message || 'Could not load interviews.' });
@@ -25,16 +18,14 @@ router.get('/', async (req, res) => {
 
 router.patch('/:id/status', async (req, res) => {
   try {
+    if (mongoose.connection.readyState !== 1) return res.status(503).json({ success: false, message: 'Interview updates are unavailable because the database connection is not active.' });
     const { status } = req.body;
     if (!['scheduled', 'in_progress', 'completed', 'cancelled'].includes(status)) {
       return res.status(400).json({ success: false, message: 'Invalid interview status.' });
     }
     let interview;
-    if (mongoose.connection.readyState === 1 && mongoose.Types.ObjectId.isValid(req.params.id)) {
+    if (mongoose.Types.ObjectId.isValid(req.params.id)) {
       interview = await Interview.findByIdAndUpdate(req.params.id, { status }, { new: true }).populate('candidateId', 'name email skills status').populate('jobId', 'title');
-    } else {
-      const existing = (store.interviews || []).find((item) => String(item._id) === String(req.params.id));
-      if (existing) { existing.status = status; interview = { ...existing }; }
     }
     if (!interview) return res.status(404).json({ success: false, message: 'Interview not found.' });
     return res.json({ success: true, data: interview });
@@ -45,20 +36,17 @@ router.patch('/:id/status', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
+    if (mongoose.connection.readyState !== 1) return res.status(503).json({ success: false, message: 'Interview updates are unavailable because the database connection is not active.' });
     const { scheduledDate, interviewerEmail } = req.body;
-    if (!scheduledDate || !interviewerEmail?.trim()) {
-      return res.status(400).json({ success: false, message: 'A new date, time, and interviewer email are required.' });
+    if (!scheduledDate) {
+      return res.status(400).json({ success: false, message: 'A new interview date and time are required.' });
     }
+    if (Number.isNaN(new Date(scheduledDate).getTime())) return res.status(400).json({ success: false, message: 'Invalid interview date.' });
     let interview;
-    if (mongoose.connection.readyState === 1 && mongoose.Types.ObjectId.isValid(req.params.id)) {
-      interview = await Interview.findByIdAndUpdate(req.params.id, { scheduledDate, interviewerEmail: interviewerEmail.trim() }, { new: true, runValidators: true }).populate('candidateId', 'name email skills status').populate('jobId', 'title');
-    } else {
-      const existing = (store.interviews || []).find((item) => String(item._id) === String(req.params.id));
-      if (existing) { existing.scheduledDate = scheduledDate; existing.interviewerEmail = interviewerEmail.trim(); interview = { ...existing }; }
-    }
+    if (mongoose.Types.ObjectId.isValid(req.params.id)) interview = await Interview.findByIdAndUpdate(req.params.id, { scheduledDate, interviewerEmail: String(interviewerEmail || '').trim() }, { new: true, runValidators: true }).populate('candidateId', 'name email skills status').populate('jobId', 'title');
     if (!interview) return res.status(404).json({ success: false, message: 'Interview not found.' });
-    const candidate = interview.candidateId?.email ? interview.candidateId : store.candidates.find((item) => String(item._id || item.id) === String(interview.candidateId));
-    const job = interview.jobId?.title ? interview.jobId : store.jobs.find((item) => String(item._id || item.id) === String(interview.jobId));
+    const candidate = interview.candidateId;
+    const job = interview.jobId;
     if (candidate?.email) {
       try { await sendInterviewInvite(candidate.email, { jobTitle: job?.title || 'the position', dateTime: scheduledDate }); }
       catch (emailError) { console.warn('Reschedule notification warning:', emailError.message); }
@@ -72,57 +60,38 @@ router.put('/:id', async (req, res) => {
 const handleSchedule = async (req, res) => {
   try {
     const { candidateId, jobId, scheduledDate, interviewerEmail, candidateEmail, questions, interviewType, durationMinutes } = req.body;
-
+    if (mongoose.connection.readyState !== 1) return res.status(503).json({ success: false, message: 'Interview scheduling is unavailable because the database connection is not active.' });
+    if (!candidateId || !jobId || !mongoose.Types.ObjectId.isValid(candidateId) || !mongoose.Types.ObjectId.isValid(jobId)) {
+      return res.status(400).json({ success: false, message: 'A valid candidate and job are required.' });
+    }
     if (!scheduledDate) {
       return res.status(400).json({ success: false, message: 'Scheduled date and time are required.' });
     }
-    if (!interviewerEmail || !interviewerEmail.trim()) {
-      return res.status(400).json({ success: false, message: 'Interviewer email is required.' });
-    }
-
-    let savedInterview;
-    if (mongoose.connection.readyState === 1 && mongoose.Types.ObjectId.isValid(candidateId) && mongoose.Types.ObjectId.isValid(jobId)) {
-      const interview = new Interview({
-        candidateId,
-        jobId,
-        scheduledDate,
-        interviewerEmail: interviewerEmail.trim(),
-        questions: questions || [],
-        interviewType: interviewType || 'Live Video Interview',
-        durationMinutes: Number(durationMinutes) || 30,
-      });
-      savedInterview = await interview.save();
-    } else {
-      savedInterview = {
-        _id: 'int_' + Date.now(),
-        candidateId: candidateId || 'cand_demo_1',
-        jobId: jobId || 'job_demo_1',
-        scheduledDate,
-        interviewerEmail: interviewerEmail.trim(),
-        candidateEmail: candidateEmail || 'candidate@example.com',
-        questions: questions || [],
-        interviewType: interviewType || 'Live Video Interview',
-        durationMinutes: Number(durationMinutes) || 30,
-        status: 'scheduled',
-        createdAt: new Date(),
-      };
-      store.interviews ||= [];
-      store.interviews.unshift(savedInterview);
-    }
+    const parsedScheduledDate = new Date(scheduledDate);
+    if (Number.isNaN(parsedScheduledDate.getTime())) return res.status(400).json({ success: false, message: 'Invalid interview date.' });
+    if (parsedScheduledDate.getTime() <= Date.now()) return res.status(400).json({ success: false, message: 'Interview date must be in the future.' });
+    const [candidate, job] = await Promise.all([Candidate.findById(candidateId), Job.findById(jobId)]);
+    if (!candidate) return res.status(404).json({ success: false, message: 'Candidate not found.' });
+    if (!job) return res.status(404).json({ success: false, message: 'Job not found.' });
+    const interview = new Interview({
+      candidateId,
+      jobId,
+      scheduledDate: parsedScheduledDate,
+      interviewerEmail: String(interviewerEmail || '').trim(),
+      questions: Array.isArray(questions) ? questions : [],
+      interviewType: interviewType || 'Technical Interview',
+      durationMinutes: Number(durationMinutes) || 30,
+    });
+    let savedInterview = await interview.save();
+    savedInterview = await Interview.findById(savedInterview._id).populate('candidateId', 'name email skills status').populate('jobId', 'title');
 
     // Trigger email notification
-    if (candidateEmail) {
+    const inviteEmail = candidateEmail || candidate.email;
+    if (inviteEmail) {
       try {
-        let jobTitle = 'the position';
+        const jobTitle = job.title || job.jobTitle || 'the position';
 
-        if (mongoose.connection.readyState === 1 && mongoose.Types.ObjectId.isValid(jobId)) {
-          const job = await Job.findById(jobId);
-          if (job) {
-            jobTitle = job.title || job.jobTitle || jobTitle;
-          }
-        }
-
-        await sendInterviewInvite(candidateEmail, {
+        await sendInterviewInvite(inviteEmail, {
           jobTitle: jobTitle,
           dateTime: scheduledDate,
         });
@@ -138,7 +107,7 @@ const handleSchedule = async (req, res) => {
     });
   } catch (error) {
     console.error('Error scheduling interview:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(error.name === 'ValidationError' || error.name === 'CastError' ? 400 : 500).json({ success: false, message: error.message || 'Could not schedule interview.' });
   }
 };
 
